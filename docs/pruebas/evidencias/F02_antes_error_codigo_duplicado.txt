@@ -1,0 +1,25 @@
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/flask/app.py:917: in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/flask/app.py:902: in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (), kwargs = {}
+
+    @wraps(vista)
+    def envoltura(*args, **kwargs):
+        usuario = usuario_actual()
+        if usuario is None:
+            return error("No has iniciado sesión.", 401)
+        if usuario.debe_cambiar_password:
+>           return error("Debes cambiar tu contraseña temporal antes de continuar.", 403,
+                         codigo="cambiar_password")
+E           TypeError: error() got multiple values for argument 'codigo'
+
+app/auth.py:85: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_usuarios.py::test_U10_contrasena_temporal_obliga_cambio - T...
+1 failed in 0.18s

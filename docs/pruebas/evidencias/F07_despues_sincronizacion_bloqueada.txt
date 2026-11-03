@@ -1,0 +1,11 @@
+Prueba E2E-OFF01 repetida tras la corrección (misma laptop, 02/11/2026 23:25)
+Archivo corregido: frontend/src/app/core/cola.service.ts (método sincronizar)
+Procedimiento: recarga de la página con los 2 eventos aún pendientes en IndexedDB.
+
+Resultado obtenido (respuestas reales):
+- Interfaz: sin franja de pendientes; "En tienda: Soriana San Juan Bosco · Fotos válidas: 1/4"
+- Eventos pendientes en el teléfono: 0
+- GET /api/promotor/hoy -> visita de Soriana:
+  {"estado": "Abierta", "origen": "Sin conexión", "checkin": "2026-11-02T23:23:01",
+   "fotos": ["Anaquel antes · Válida · Sin conexión · capturada 23:23:17 · recibida 23:25:03"]}
+Estado: EXITOSA (se conservan orden, hora de captura y de recepción; sin duplicados).

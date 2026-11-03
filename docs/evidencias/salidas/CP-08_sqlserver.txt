@@ -1,0 +1,32 @@
+CP-08 · Acceso por rol (matriz de permisos)
+Fecha y hora: 03/11/2026 14:57:57  ·  Equipo: Laptop15-Elizabeth  ·  Windows 11  ·  Python 3.13.17
+Base de datos: SQL Server, base de pruebas ScribeTracker_Pruebas (ST_BD_PRUEBAS)
+Carpeta: C:\ScribeTracker\backend
+> set ST_BD_PRUEBAS=ScribeTracker_Pruebas
+> python -m pytest tests/test_auth.py::test_matriz_de_permisos -v
+
+============================= test session starts =============================
+collecting ... collected 9 items
+
+tests/test_auth.py::test_matriz_de_permisos[Promotor-Promotor] PASSED    [ 11%]
+tests/test_auth.py::test_matriz_de_permisos[Promotor-Supervisor] PASSED  [ 22%]
+tests/test_auth.py::test_matriz_de_permisos[Promotor-Administrador] PASSED [ 33%]
+tests/test_auth.py::test_matriz_de_permisos[Supervisor-Promotor] PASSED  [ 44%]
+tests/test_auth.py::test_matriz_de_permisos[Supervisor-Supervisor] PASSED [ 55%]
+tests/test_auth.py::test_matriz_de_permisos[Supervisor-Administrador] PASSED [ 66%]
+tests/test_auth.py::test_matriz_de_permisos[Administrador-Promotor] PASSED [ 77%]
+tests/test_auth.py::test_matriz_de_permisos[Administrador-Supervisor] PASSED [ 88%]
+tests/test_auth.py::test_matriz_de_permisos[Administrador-Administrador] PASSED [100%]
+
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/test_auth.py::test_matriz_de_permisos[Promotor-Promotor]
+PASSED tests/test_auth.py::test_matriz_de_permisos[Promotor-Supervisor]
+PASSED tests/test_auth.py::test_matriz_de_permisos[Promotor-Administrador]
+PASSED tests/test_auth.py::test_matriz_de_permisos[Supervisor-Promotor]
+PASSED tests/test_auth.py::test_matriz_de_permisos[Supervisor-Supervisor]
+PASSED tests/test_auth.py::test_matriz_de_permisos[Supervisor-Administrador]
+PASSED tests/test_auth.py::test_matriz_de_permisos[Administrador-Promotor]
+PASSED tests/test_auth.py::test_matriz_de_permisos[Administrador-Supervisor]
+PASSED tests/test_auth.py::test_matriz_de_permisos[Administrador-Administrador]
+======================== 9 passed in 67.89s (0:01:07) =========================

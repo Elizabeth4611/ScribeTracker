@@ -1,0 +1,16 @@
+CP-10 · Petición manipulada: solo el administrador registra usuarios
+Fecha y hora: 03/11/2026 14:59:27  ·  Equipo: Laptop15-Elizabeth  ·  Windows 11  ·  Python 3.13.17
+Base de datos: SQL Server, base de pruebas ScribeTracker_Pruebas (ST_BD_PRUEBAS)
+Carpeta: C:\ScribeTracker\backend
+> set ST_BD_PRUEBAS=ScribeTracker_Pruebas
+> python -m pytest tests/test_usuarios.py::test_U05_solo_admin_gestiona -v
+
+============================= test session starts =============================
+collecting ... collected 1 item
+
+tests/test_usuarios.py::test_U05_solo_admin_gestiona PASSED              [100%]
+
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/test_usuarios.py::test_U05_solo_admin_gestiona
+============================= 1 passed in 11.02s ==============================

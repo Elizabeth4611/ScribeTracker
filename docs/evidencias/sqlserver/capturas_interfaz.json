@@ -1,0 +1,269 @@
+[
+ {
+  "id": "UI-01",
+  "archivo": "UI-01_login.png",
+  "descripcion": "Pantalla de inicio de sesión",
+  "url": "/login",
+  "avisos": [],
+  "hora": "2026-11-03T15:50:06"
+ },
+ {
+  "id": "UI-02",
+  "archivo": "UI-02_cuenta_inactiva.png",
+  "descripcion": "Login de cuenta Inactiva: el servidor rechaza el acceso (CP-09)",
+  "url": "/login",
+  "avisos": [],
+  "hora": "2026-11-03T15:50:08"
+ },
+ {
+  "id": "UI-03",
+  "archivo": "UI-03_inicio_promotor.png",
+  "descripcion": "Inicio del promotor (rol Promotor)",
+  "url": "/promotor",
+  "avisos": [],
+  "hora": "2026-11-03T15:50:10"
+ },
+ {
+  "id": "UI-04",
+  "archivo": "UI-04_inicio_fuera_primera_tienda.png",
+  "descripcion": "Ubicación en Soriana (tienda 2): inicio de jornada rechazado (CP-16)",
+  "url": "/promotor/jornada",
+  "avisos": [
+   "Para iniciar tu jornada debes estar en tu primera tienda: Walmart Torres Landa. Estás a 2297 m y el radio permitido es de 90 m."
+  ],
+  "hora": "2026-11-03T15:50:13"
+ },
+ {
+  "id": "UI-05",
+  "archivo": "UI-05_jornada_iniciada.png",
+  "descripcion": "A 20 m de Walmart (tienda 1): jornada iniciada, sin visita todavía (CP-15, CP-18)",
+  "url": "/promotor/jornada",
+  "avisos": [
+   "Jornada iniciada. El seguimiento de ubicación está activo."
+  ],
+  "hora": "2026-11-03T15:50:16"
+ },
+ {
+  "id": "UI-06",
+  "archivo": "UI-06_checkin.png",
+  "descripcion": "Check-in independiente en Walmart Torres Landa (CP-18)",
+  "url": "/promotor/jornada",
+  "avisos": [
+   "Check-in registrado correctamente en Walmart Torres Landa."
+  ],
+  "hora": "2026-11-03T15:50:18"
+ },
+ {
+  "id": "UI-07",
+  "archivo": "UI-07_checkout_sin_fotos.png",
+  "descripcion": "Check-out sin fotos: rechazo esperado con categorías faltantes (CP-21)",
+  "url": "/promotor/visita",
+  "avisos": [
+   "Faltan fotografías válidas para cerrar la visita: Anaquel antes, Anaquel después, Precios, Promociones."
+  ],
+  "hora": "2026-11-03T15:50:21"
+ },
+ {
+  "id": "UI-08",
+  "archivo": "UI-08_foto_fuera_geocerca.png",
+  "descripcion": "Foto de Precios a 400 m: se guarda pero NO cuenta (CP-20)",
+  "url": "/promotor/visita",
+  "avisos": [
+   "La foto se guardó pero NO cuenta para la visita: Tomada a 399 m de la tienda (radio 90 m)."
+  ],
+  "hora": "2026-11-03T15:50:24"
+ },
+ {
+  "id": "UI-09",
+  "archivo": "UI-09_cuatro_categorias.png",
+  "descripcion": "Cuatro categorías válidas (Promociones como exhibición Scribe) y foto rechazada marcada",
+  "url": "/promotor/visita",
+  "avisos": [
+   "Foto guardada correctamente (Promociones)."
+  ],
+  "hora": "2026-11-03T15:50:35"
+ },
+ {
+  "id": "UI-10",
+  "archivo": "UI-10_checkout_jornada_abierta.png",
+  "descripcion": "Check-out válido: la visita se cierra y la jornada sigue abierta (CP-22)",
+  "url": "/promotor/jornada",
+  "avisos": [
+   "Check-out registrado. Tiempo en tienda: 0 h 0 min. Tu jornada sigue abierta."
+  ],
+  "hora": "2026-11-03T15:50:38"
+ },
+ {
+  "id": "UI-11",
+  "archivo": "UI-11_pausa_activa.png",
+  "descripcion": "Pausa de descanso con temporizador: seguimiento detenido (CP-24)",
+  "url": "/promotor/pausas",
+  "avisos": [
+   "Pausa de descanso iniciada (20 min). El seguimiento de ubicación está detenido."
+  ],
+  "hora": "2026-11-03T15:50:43"
+ },
+ {
+  "id": "CP-07",
+  "archivo": "CP-07_despues_1_sin_conexion.png",
+  "descripcion": "Sin conexión: el check-in queda PENDIENTE (no validado) y guardado en el teléfono",
+  "url": "/promotor/jornada",
+  "avisos": [
+   "Sin conexión: se guardó en el teléfono y se enviará al recuperar la señal. Aún no está validado por el servidor."
+  ],
+  "hora": "2026-11-03T15:50:48"
+ },
+ {
+  "id": "CP-07",
+  "archivo": "CP-07_despues_2_sincronizado.png",
+  "descripcion": "Señal recuperada: sincronizado y validado por el servidor (origen Sin conexión, check-in 15:50:46)",
+  "url": "/promotor/jornada",
+  "avisos": [],
+  "hora": "2026-11-03T15:50:53"
+ },
+ {
+  "id": "UI-12",
+  "archivo": "UI-12_finalizar_con_pendientes.png",
+  "descripcion": "Finalizar con 2 tiendas sin visitar: el servidor exige motivo (CP-23)",
+  "url": "/promotor/jornada",
+  "avisos": [
+   "Aún tienes tiendas asignadas sin visitar. Complétalas o indica el motivo para cerrar."
+  ],
+  "hora": "2026-11-03T15:51:07"
+ },
+ {
+  "id": "UI-13",
+  "archivo": "UI-13_jornada_finalizada.png",
+  "descripcion": "Jornada finalizada con motivo: seguimiento detenido (CP-23, CP-24)",
+  "url": "/promotor/jornada",
+  "avisos": [
+   "Jornada finalizada. El seguimiento de ubicación se detuvo."
+  ],
+  "hora": "2026-11-03T15:51:10"
+ },
+ {
+  "id": "UI-14",
+  "archivo": "UI-14_historial.png",
+  "descripcion": "Historial propio del día: tiendas, horarios, pausas y fotos",
+  "url": "/promotor/historial",
+  "avisos": [],
+  "hora": "2026-11-03T15:51:14"
+ },
+ {
+  "id": "UI-15",
+  "archivo": "UI-15_supervisor_mapa.png",
+  "descripcion": "Supervisor: estados separados, última ubicación y alertas críticas internas",
+  "url": "/panel/supervision",
+  "avisos": [],
+  "hora": "2026-11-03T15:51:20"
+ },
+ {
+  "id": "UI-16",
+  "archivo": "UI-16_supervisor_seguimiento.png",
+  "descripcion": "Rutas del día: recorrido, visitas, incidencias y evidencias con su validación",
+  "url": "/panel/seguimiento?id_promotor=3",
+  "avisos": [],
+  "hora": "2026-11-03T15:51:24"
+ },
+ {
+  "id": "UI-17",
+  "archivo": "UI-17_incidencias.png",
+  "descripcion": "Historial de incidencias con seguimiento manual",
+  "url": "/panel/incidencias",
+  "avisos": [],
+  "hora": "2026-11-03T15:51:26"
+ },
+ {
+  "id": "UI-18",
+  "archivo": "UI-18_reporte.png",
+  "descripcion": "Reporte diario de exhibición generado con datos reales (CP-26)",
+  "url": "/panel/reportes",
+  "avisos": [
+   "Reporte generado. Puedes descargarlo en PDF en la lista."
+  ],
+  "hora": "2026-11-03T15:51:29"
+ },
+ {
+  "id": "UI-19",
+  "archivo": "UI-19_reporte.pdf",
+  "descripcion": "PDF descargado",
+  "bytes": 110042,
+  "tipo": "application/pdf"
+ },
+ {
+  "id": "UI-20",
+  "archivo": "UI-20_asignacion.png",
+  "descripcion": "Gestión de rutas: asignación manual por fecha y orden (advertencia por cantidad)",
+  "url": "/panel/asignacion",
+  "avisos": [
+   "Asignación guardada correctamente."
+  ],
+  "hora": "2026-11-03T15:51:38"
+ },
+ {
+  "id": "UI-21",
+  "archivo": "UI-21_admin_inicio.png",
+  "descripcion": "Administrador: resumen general, alertas y últimas actividades",
+  "url": "/panel/inicio",
+  "avisos": [],
+  "hora": "2026-11-03T15:51:43"
+ },
+ {
+  "id": "UI-22",
+  "archivo": "UI-22_alta_campos_obligatorios.png",
+  "descripcion": "Alta de usuario vacía: mensajes por campo obligatorio (CP-11)",
+  "url": "/panel/usuarios",
+  "avisos": [
+   "Revisa los campos marcados."
+  ],
+  "hora": "2026-11-03T15:51:45"
+ },
+ {
+  "id": "UI-23",
+  "archivo": "UI-23_alta_correo_duplicado.png",
+  "descripcion": "Correo ya registrado: el servidor rechaza el duplicado (CP-12)",
+  "url": "/panel/usuarios",
+  "avisos": [
+   "Revisa los campos marcados."
+  ],
+  "hora": "2026-11-03T15:51:47"
+ },
+ {
+  "id": "UI-24",
+  "archivo": "UI-24_alta_usuario.png",
+  "descripcion": "Usuario creado: la contraseña temporal se muestra una sola vez (aquí oculta a propósito)",
+  "url": "/panel/usuarios",
+  "avisos": [
+   "Usuario registrado correctamente."
+  ],
+  "hora": "2026-11-03T15:51:49"
+ },
+ {
+  "id": "UI-25",
+  "archivo": "UI-25_tienda_sin_coordenadas.png",
+  "descripcion": "Alta de tienda sin coordenadas: rechazo esperado (CP-27)",
+  "url": "/panel/tiendas",
+  "avisos": [
+   "Revisa los campos marcados."
+  ],
+  "hora": "2026-11-03T15:51:52"
+ },
+ {
+  "id": "UI-26",
+  "archivo": "UI-26_parametros.png",
+  "descripcion": "Parámetros globales (tolerancias 20 y 30 min separadas)",
+  "url": "/panel/parametros",
+  "avisos": [
+   "Revisa los campos marcados."
+  ],
+  "hora": "2026-11-03T15:51:54"
+ },
+ {
+  "id": "UI-27",
+  "archivo": "UI-27_permisos_promotor.png",
+  "descripcion": "Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13)",
+  "url": "/promotor",
+  "avisos": [],
+  "hora": "2026-11-03T15:51:57"
+ }
+]

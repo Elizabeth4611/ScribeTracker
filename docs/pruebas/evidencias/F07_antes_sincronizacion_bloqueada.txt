@@ -1,0 +1,18 @@
+Prueba E2E-OFF01 (navegador integrado, laptop, Flask + SQL Server real, 02/11/2026 23:24)
+Procedimiento: sin señal simulada -> check-in en Soriana y foto Anaquel antes quedan
+"pendientes"; se restaura la red y se dispara el evento "online"; se espera 6 s.
+
+Resultado obtenido (respuestas reales):
+- Interfaz tras restaurar la red: "2 pendiente(s) de sincronizar"
+- GET /api/promotor/hoy -> visita de Soriana: null (no llegó al servidor)
+- IndexedDB: checkin pendiente intentos=1; evidencia pendiente intentos=1
+  (no hubo ningún reintento, ni por el evento "online" ni por el intervalo de 30 s)
+- XHR de diagnóstico a http://127.0.0.1:9 termina con status 0 en 12 ms (no hay petición colgada)
+- Estado interno de ColaService (ng.getComponent):
+  {"enCurso": "[object Promise]", "sincronizando": false, "pendientes": 2, "usuario": 4, "enLinea": true}
+
+Causa: en sincronizar(), si no había pendientes la función async terminaba de forma
+síncrona (sin ningún await) y su "finally" ponía enCurso = null ANTES de que la
+asignación this.enCurso = (async ...)() guardara la promesa ya resuelta. Desde el
+primer llamado sin pendientes (al iniciar sesión), enCurso quedaba ocupado para
+siempre y todas las sincronizaciones posteriores devolvían esa promesa sin ejecutar.

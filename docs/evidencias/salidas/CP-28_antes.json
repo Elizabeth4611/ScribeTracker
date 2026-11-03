@@ -1,0 +1,14 @@
+{
+ "pantalla": {
+  "franja": "0 pendiente(s) de sincronizar · datos guardados en el teléfono",
+  "soriana": "2. Soriana San Juan Bosco | Blvd. San Juan Bosco 3802, León | Por visitar | CHECK-IN",
+  "visita_en_curso": "(ninguna)",
+  "boton_checkin_soriana": true
+ },
+ "servidor": {
+  "estado": "Abierta",
+  "origen": "Sin conexión",
+  "checkin": "2026-11-03T15:14:35"
+ },
+ "hora": "2026-11-03T15:14:41"
+}

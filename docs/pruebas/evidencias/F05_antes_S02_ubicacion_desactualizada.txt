@@ -1,0 +1,6 @@
+E       AssertionError: assert 'Sin ubicación' == 'Reciente'
+E         
+E         - Reciente
+E         + Sin ubicación
+tests/test_supervision_reportes.py:166: AssertionError
+1 failed in 0.17s

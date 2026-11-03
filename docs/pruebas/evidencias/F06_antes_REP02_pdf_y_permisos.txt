@@ -1,0 +1,12 @@
+        Raises an OSError if the file is truncated and the read cannot be completed
+>               raise OSError(msg)
+E               OSError: Truncated File Read
+/usr/local/lib/python3.13/site-packages/PIL/ImageFile.py:726: OSError
+tests/test_supervision_reportes.py:294: 
+        Raises an OSError if the file is truncated and the read cannot be completed
+>               raise OSError(msg)
+E               OSError: 
+E               fileName='/tmp/pytest-of-root/pytest-13/test_REP02_pdf_y_permisos0/evidencias/2026/11/5629cf07d9ef426cbbb09f6033b3f24a.jpg' identity=[ImageReader@0x7f914ba7f0e0 filename='/tmp/pytest-of-root/pytest-13/test_REP02_pdf_y_permisos0/evidencias/2026/11/5629cf07d9ef426cbbb09f6033b3f24a.jpg'] Truncated File Read
+/usr/local/lib/python3.13/site-packages/PIL/ImageFile.py:726: OSError
+FAILED tests/test_supervision_reportes.py::test_REP02_pdf_y_permisos - OSError: 
+1 failed in 0.95s

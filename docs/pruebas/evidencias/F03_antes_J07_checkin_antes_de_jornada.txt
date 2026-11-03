@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________________ test_J07_flujo_completo ____________________________
+
+app = <Flask 'app'>
+esc = namespace(ids=namespace(admin=3, s1=5, s2=6, p1=7, p2=8, p3=9, t=[1, 2, 3, 4]), coords=[(21.125, -101.68), (21.135, -1..., (21.145, -101.68), (21.11, -101.66)], e=<module 'tests.escenario' from '/home/claude/st/backend/tests/escenario.py'>)
+obs = <function obs.<locals>._obs at 0x7f668d412de0>
+
+    def test_J07_flujo_completo(app, esc, obs):
+        """J07 · Flujo completo de la jornada con dos tiendas
+        RF: RF-01, RF-03, RF-04, RF-05, RF-06, RF-07
+        Tipo: válido (integración)
+        Pre: P1 con Walmart y Soriana asignadas
+        Entrada: iniciar, check-in, 4 fotos, check-out en cada tienda y finalizar sin forzar
+        Esperado: jornada Finalizada sin cierre forzado; historial con 2 tiendas visitadas y 8 fotos
+        """
+        c = _p1(app)
+        _iniciar(c, esc)
+        for idx, h in ((0, 8), (1, 11)):
+            a_las(h, 0)
+>           idv = _checkin(c, esc, idx=idx, metros=5).get_json()["visita"]["id_visita"]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'visita'
+
+tests/test_jornada.py:331: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_jornada.py::test_J07_flujo_completo - KeyError: 'visita'
+1 failed in 0.16s
+RESPUESTA REAL DEL SERVIDOR (check-in 08:00, jornada iniciada 08:05): 400 {'error': 'La hora del registro es anterior al inicio de tu jornada.'}

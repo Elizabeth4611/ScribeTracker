@@ -1,0 +1,16 @@
+CP-05 · Ubicación reciente y desactualizada
+Fecha y hora: 03/11/2026 14:57:21  ·  Equipo: Laptop15-Elizabeth  ·  Windows 11  ·  Python 3.13.17
+Base de datos: SQL Server, base de pruebas ScribeTracker_Pruebas (ST_BD_PRUEBAS)
+Carpeta: C:\ScribeTracker\backend
+> set ST_BD_PRUEBAS=ScribeTracker_Pruebas
+> python -m pytest tests/test_supervision_reportes.py::test_S02_ubicacion_desactualizada -v
+
+============================= test session starts =============================
+collecting ... collected 1 item
+
+tests/test_supervision_reportes.py::test_S02_ubicacion_desactualizada PASSED [100%]
+
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/test_supervision_reportes.py::test_S02_ubicacion_desactualizada
+============================= 1 passed in 13.12s ==============================

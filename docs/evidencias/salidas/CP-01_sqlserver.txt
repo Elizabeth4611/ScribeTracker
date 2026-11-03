@@ -1,0 +1,16 @@
+CP-01 · Login no expone contraseña ni hash
+Fecha y hora: 03/11/2026 14:55:59  ·  Equipo: Laptop15-Elizabeth  ·  Windows 11  ·  Python 3.13.17
+Base de datos: SQL Server, base de pruebas ScribeTracker_Pruebas (ST_BD_PRUEBAS)
+Carpeta: C:\ScribeTracker\backend
+> set ST_BD_PRUEBAS=ScribeTracker_Pruebas
+> python -m pytest tests/test_auth.py::test_login_correcto_devuelve_rol_sin_hash -v
+
+============================= test session starts =============================
+collecting ... collected 1 item
+
+tests/test_auth.py::test_login_correcto_devuelve_rol_sin_hash PASSED     [100%]
+
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/test_auth.py::test_login_correcto_devuelve_rol_sin_hash
+============================= 1 passed in 13.48s ==============================
