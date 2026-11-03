@@ -1,0 +1,14 @@
+{
+ "pantalla": {
+  "franja": "(sin franja)",
+  "soriana": "2. Soriana San Juan Bosco | Blvd. San Juan Bosco 3802, León | En curso | Entrada 15:52 · Salida —",
+  "visita_en_curso": "En tienda: Soriana San Juan Bosco |  | Fotos válidas: 0/4 |  | 📷 TOMAR FOTOS / CHECK-OUT",
+  "boton_checkin_soriana": false
+ },
+ "servidor": {
+  "estado": "Abierta",
+  "origen": "Sin conexión",
+  "checkin": "2026-11-03T15:52:39"
+ },
+ "hora": "2026-11-03T15:52:48"
+}

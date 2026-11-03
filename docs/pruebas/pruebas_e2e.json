@@ -1,0 +1,92 @@
+[
+ {
+  "id": "E2E-01",
+  "nombre": "Inicio de jornada fuera de la primera tienda",
+  "rf": "RF-01; regla C2",
+  "pre": "promotor.prueba con 4 tiendas asignadas hoy",
+  "procedimiento": "Ubicación simulada en Soriana (tienda 2) y botón INICIAR JORNADA",
+  "esperado": "Rechazo con distancia y radio",
+  "obtenido": "Aviso: \"Para iniciar tu jornada debes estar en tu primera tienda: Walmart Torres Landa. Estás a 2297 m y el radio permitido es de 90 m.\"",
+  "estado": "exitosa"
+ },
+ {
+  "id": "E2E-02",
+  "nombre": "Inicio de jornada en la primera tienda",
+  "rf": "RF-01; reglas C1-C2",
+  "pre": "Sin jornada",
+  "procedimiento": "Ubicación a ~22 m de Walmart Torres Landa e INICIAR JORNADA",
+  "esperado": "Jornada iniciada y rastreo activo",
+  "obtenido": "Aviso \"Jornada iniciada. El seguimiento de ubicación está activo.\"; estado \"Jornada activa\"; aparecen los botones CHECK-IN",
+  "estado": "exitosa"
+ },
+ {
+  "id": "E2E-03",
+  "nombre": "Check-in y check-out bloqueado sin fotos",
+  "rf": "RF-03, RF-04; regla D",
+  "pre": "Jornada abierta",
+  "procedimiento": "CHECK-IN en Walmart; TOMAR FOTOS; CHECK-OUT sin fotos",
+  "esperado": "Check-in registrado; check-out rechazado con categorías faltantes",
+  "obtenido": "\"Check-in registrado correctamente en Walmart Torres Landa.\" y \"Faltan fotografías válidas para cerrar la visita: Anaquel antes, Anaquel después, Precios, Promociones.\"",
+  "estado": "exitosa"
+ },
+ {
+  "id": "E2E-04",
+  "nombre": "Fotos con cámara integrada y geocerca",
+  "rf": "RF-05, RF-06, RF-12",
+  "pre": "Visita abierta en Walmart",
+  "procedimiento": "Foto Precios a 400 m; fotos de las 4 categorías a 11 m (Promociones marcada como exhibición sin promoción)",
+  "esperado": "La foto lejana se guarda sin contar; las 4 categorías quedan válidas",
+  "obtenido": "\"La foto se guardó pero NO cuenta para la visita: Tomada a 399 m de la tienda (radio 90 m).\"; lista ✔ en las 4 categorías; galería: Precios Fuera de geocerca (400 m) y 4 Válidas (11 m)",
+  "estado": "exitosa"
+ },
+ {
+  "id": "E2E-05",
+  "nombre": "Check-out sin cerrar la jornada",
+  "rf": "RF-04; reglas C5-C7",
+  "pre": "4 categorías válidas",
+  "procedimiento": "CHECK-OUT a ~30 m",
+  "esperado": "Visita cerrada, jornada abierta",
+  "obtenido": "\"Check-out registrado. Tiempo en tienda: 0 h 1 min. Tu jornada sigue abierta.\"; Walmart \"Visitada\", Soriana \"Por visitar\" con CHECK-IN; estado \"Jornada activa\"",
+  "estado": "exitosa"
+ },
+ {
+  "id": "E2E-06",
+  "nombre": "Pausa de descanso detiene el seguimiento",
+  "rf": "RF-02, RF-08",
+  "pre": "Jornada abierta sin visita",
+  "procedimiento": "Pausas > DESCANSO; POST /api/promotor/ubicaciones durante la pausa; FINALIZAR",
+  "esperado": "Pausa iniciada, rastreo suspendido y punto rechazado",
+  "obtenido": "\"Pausa de descanso iniciada (20 min). El seguimiento de ubicación está detenido.\"; servidor: estado_jornada \"En pausa\", estado_conexion \"Rastreo suspendido\", rastreo_activo false; ubicación 409 \"El seguimiento está suspendido durante la pausa.\"; \"Pausa finalizada. Rastreo reactivado.\"",
+  "estado": "exitosa"
+ },
+ {
+  "id": "E2E-07",
+  "nombre": "Sincronización sin conexión",
+  "rf": "RNF-08, RNF-09",
+  "pre": "Red simulada caída",
+  "procedimiento": "Check-in en Soriana y foto sin red; restaurar red",
+  "esperado": "Eventos marcados como pendientes (no validados) y enviados al volver la red",
+  "obtenido": "Primera ejecución: pendientes correctos pero NO se sincronizaron (defecto F07). Tras la corrección: 0 pendientes; visita Soriana con origen \"Sin conexión\"; foto capturada 23:23:17, recibida 23:25:03",
+  "estado": "fallida → corregida → exitosa"
+ },
+ {
+  "id": "E2E-08",
+  "nombre": "Monitoreo del supervisor",
+  "rf": "RF-10, RF-11",
+  "pre": "supervisor.prueba; promotor en Soriana",
+  "procedimiento": "Abrir Módulo de supervisión",
+  "esperado": "Estados separados, última ubicación y alertas críticas",
+  "obtenido": "Resumen: En tienda 1; tabla: Activo · En jornada · En tienda Soriana San Juan Bosco · Reciente · 23:21 · visitas 1/4 · pausas 1; alerta crítica \"Foto fuera de geocerca\"",
+  "estado": "exitosa"
+ },
+ {
+  "id": "E2E-09",
+  "nombre": "Reporte de exhibición en PDF",
+  "rf": "RF-13, RF-15, RF-16",
+  "pre": "Datos de E2E-01 a E2E-07",
+  "procedimiento": "Generar reporte Diario de Exhibición del 02/11/2026 y descargar PDF",
+  "esperado": "Métricas iguales a los registros y PDF con fotos",
+  "obtenido": "201 \"Reporte generado.\"; asignadas 4, visitadas 1, fotos 5 válidas de 6, 1 fuera de geocerca, 2 incidencias; PDF 67,655 bytes (%PDF-1.4) con 5 imágenes",
+  "estado": "exitosa"
+ }
+]

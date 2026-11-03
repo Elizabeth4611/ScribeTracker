@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estado del proyecto · ScribeTracker</title><style>
+:root { --fondo:#f7f7f8; --papel:#ffffff; --texto:#1f2328; --suave:#57606a; --borde:#d0d7de; --acento:#d4001a; --codigo:#f3f4f6; }
+@media (prefers-color-scheme: dark) { :root { --fondo:#0d1117; --papel:#161b22; --texto:#e6edf3; --suave:#9da7b3; --borde:#30363d; --acento:#ff5a6a; --codigo:#1f2630; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--fondo); color:var(--texto); font:16px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif; }
+.barra { position:sticky; top:0; z-index:5; background:var(--papel); border-bottom:1px solid var(--borde); padding:10px 16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+.barra b { color:var(--acento); }
+.barra a { color:var(--texto); text-decoration:none; font-size:13px; white-space:nowrap; }
+.barra a:hover { text-decoration:underline; }
+main { max-width:1100px; margin:0 auto; padding:24px 16px 80px; background:var(--papel); }
+h1 { color:var(--acento); margin-top:0; }
+h2, h3 { scroll-margin-top:64px; }
+h2 { border-bottom:2px solid var(--borde); padding-bottom:4px; margin-top:48px; }
+h3 { margin-top:40px; padding:6px 10px; background:var(--codigo); border-left:4px solid var(--acento); border-radius:4px; }
+table { border-collapse:collapse; width:100%; margin:12px 0; font-size:14px; display:block; overflow-x:auto; }
+th, td { border:1px solid var(--borde); padding:6px 8px; vertical-align:top; text-align:left; }
+th { background:var(--codigo); }
+code { background:var(--codigo); padding:1px 4px; border-radius:4px; font-size:13px; }
+pre { background:var(--codigo); padding:12px; border-radius:6px; overflow-x:auto; }
+pre code { padding:0; }
+img { max-width:100%; height:auto; border:1px solid var(--borde); border-radius:6px; display:block; margin:12px auto 4px; cursor:zoom-in; }
+img.grande { position:fixed; inset:0; margin:auto; max-width:96vw; max-height:96vh; z-index:20; cursor:zoom-out; box-shadow:0 0 0 100vmax rgba(0,0,0,.75); }
+blockquote { margin:12px 0; padding:8px 16px; border-left:4px solid #e3b341; background:var(--codigo); }
+p em { color:var(--suave); }
+</style></head>
+<body><nav class="barra"><b>Estado del proyecto · ScribeTracker</b><a href="#carpetas" title="Carpetas">Carpetas</a> <a href="#terminado-y-comprobado" title="Terminado y comprobado">Terminado y comprobado</a> <a href="#pruebas-realizadas-ejecuciones-reales" title="Pruebas realizadas (ejecuciones reales)">Pruebas realizadas (ejecuciones…</a> <a href="#reporte-de-pruebas-con-imagenes-para-la-docente" title="Reporte de pruebas con imágenes (para la docente)">Reporte de pruebas…</a> <a href="#lo-que-falta-actualizar-siguiente-paso" title="Lo que falta actualizar (siguiente paso)">Lo que falta…</a> <a href="#decisiones-pendientes-de-aprobacion-no-bloquean" title="Decisiones pendientes de aprobación (no bloquean)">Decisiones pendientes de…</a> <a href="#datos-de-prueba-en-la-base-real" title="Datos de prueba en la base real">Datos de prueba…</a> <a href="#archivos-clave" title="Archivos clave">Archivos clave</a></nav><main><h1 id="estado-del-proyecto-scribetracker">Estado del proyecto · ScribeTracker</h1>
+<p>Última actualización: <strong>3 de noviembre de 2026, 16:05</strong> (entrega: miércoles 4 de noviembre).</p>
+<h2 id="carpetas">Carpetas</h2>
+<ul>
+<li><strong>Carpeta de trabajo y ejecución: <code>C:\ScribeTracker</code>.</strong> Aquí están <code>backend\.env</code>, el entorno virtual <code>.venv</code>, <code>node_modules</code> y la base real de SQL Server. Todo el desarrollo se hizo aquí.</li>
+<li>Su Git <strong>no está vinculado</strong> a GitHub: el remoto es el texto de ejemplo <code>https://github.com/TU_USUARIO/ScribeTracker.git</code> y el historial (<code>721de2c</code>) es distinto del de GitHub. <strong>No hay commit</strong> de esta etapa.</li>
+<li><code>C:\Users\eeliz\Documents\GitHub\ScribeTracker</code> es la copia vinculada a GitHub (<code>Elizabeth4611/ScribeTracker</code>), con solo los commits iniciales y la etapa 1 sin confirmar. <strong>No se usó</strong> en esta etapa.</li>
+<li><strong>Decisión pendiente:</strong> cómo unificar las copias. Opción sugerida: en <code>C:\ScribeTracker</code>, cambiar el remoto a <code>Elizabeth4611/ScribeTracker</code>, hacer commit y subir a una rama nueva (<code>etapa-2</code>) para revisarla antes de unirla a <code>main</code>.</li>
+</ul>
+<h2 id="terminado-y-comprobado">Terminado y comprobado</h2>
+<table>
+<thead>
+<tr>
+<th>Módulo</th>
+<th>Base de datos</th>
+<th>Backend</th>
+<th>Frontend</th>
+<th>Pruebas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Acceso y usuarios</td>
+<td>Columnas nuevas en Usuario (número de empleado, intentos, contraseña temporal, baja)</td>
+<td>CRUD, baja lógica, contraseña temporal, cambio obligatorio, alcance por rol</td>
+<td>Login, recuperar, cambiar contraseña, Gestión de usuarios</td>
+<td>U01-U12, AUT</td>
+</tr>
+<tr>
+<td>Parámetros globales</td>
+<td>Tabla Parametro (15 parámetros)</td>
+<td>Consultar, editar, restablecer</td>
+<td>Pantalla de parámetros</td>
+<td>U12</td>
+</tr>
+<tr>
+<td>Tiendas</td>
+<td>Tabla Tienda</td>
+<td>Alta, edición, filtros, baja lógica protegida</td>
+<td>Gestión de tiendas con mapa</td>
+<td>T01-T06</td>
+</tr>
+<tr>
+<td>Rutas y asignaciones</td>
+<td>Ruta, Ruta_Tienda, Asignacion (historial)</td>
+<td>Plantillas, aplicar a fechas, asignación por día</td>
+<td>Rutas, Gestión de rutas</td>
+<td>R01-R06</td>
+</tr>
+<tr>
+<td>Jornada, visitas, evidencias, pausas</td>
+<td>Jornada, Visita, Evidencia, Pausa, Ubicacion</td>
+<td>Reglas C1-C9 y D en el servidor</td>
+<td>Vista móvil del promotor completa</td>
+<td>J, V, E, P, A; E2E-01…06</td>
+</tr>
+<tr>
+<td>Seguimiento e incidencias</td>
+<td>Incidencia</td>
+<td>Estados separados, alertas internas, seguimiento manual</td>
+<td>Mapa de supervisión, Rutas del día, Incidencias</td>
+<td>S01-S03, I01-I03, E2E-08</td>
+</tr>
+<tr>
+<td>Reportes</td>
+<td>Reporte</td>
+<td>Diario, semanal y mensual; Desempeño, Incidencias, Exhibición; PDF</td>
+<td>Reportes</td>
+<td>REP01-REP04, E2E-09</td>
+</tr>
+<tr>
+<td>Sin conexión</td>
+<td>Evento_Cliente (idempotencia)</td>
+<td>X-Id-Cliente, hora de captura, origen</td>
+<td>Cola IndexedDB, pendientes y confirmados; la pantalla se actualiza al sincronizar (F08)</td>
+<td>O01-O04, E2E-07, CP-28</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Migración</strong> <code>c87399dedb00</code> aplicada en la base real <code>ScribeTracker</code>, con <strong>respaldo previo</strong> en <code>C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS02\MSSQL\Backup\ScribeTracker_antes_etapa2_20261102_225908.bak</code>. Había 5 usuarios antes y siguen los 5 después.</li>
+<li><strong>Base de pruebas separada</strong> <code>ScribeTracker_Pruebas</code> creada en el mismo SQL Server. La migración se probó también sobre esa base vacía.</li>
+<li><strong>Frontend:</strong> compilado en producción sin errores (<code>npm run build</code>); revisión estricta de plantillas (<code>ngc</code>) sin errores.</li>
+</ul>
+<h2 id="pruebas-realizadas-ejecuciones-reales">Pruebas realizadas (ejecuciones reales)</h2>
+<table>
+<thead>
+<tr>
+<th>Fecha y hora</th>
+<th>Entorno</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>02/11 22:30-22:50</td>
+<td>Desarrollo (Linux, SQLite)</td>
+<td>Se detectaron y corrigieron F01-F06. Final: 91 de 91</td>
+</tr>
+<tr>
+<td>02/11 22:59-23:04</td>
+<td><strong>Laptop · SQL Server</strong> (<code>ScribeTracker_Pruebas</code>)</td>
+<td><strong>91 passed</strong> en 4 min 56 s (<code>scripts/logs/etapa2_bd.log</code>)</td>
+</tr>
+<tr>
+<td>02/11 23:04</td>
+<td>Laptop · SQLite</td>
+<td>91 passed</td>
+</tr>
+<tr>
+<td>02/11 23:20-23:26</td>
+<td><strong>Laptop · navegador + Flask + SQL Server real</strong></td>
+<td>E2E-01…09 exitosas; E2E-07 encontró el defecto F07, corregido y verificado</td>
+</tr>
+<tr>
+<td>02/11 23:26-23:31</td>
+<td><strong>Laptop · SQL Server + SQLite</strong> (<code>scripts/pruebas.bat</code>)</td>
+<td><strong>91 passed</strong> en SQL Server (4 min 29 s) y <strong>91 passed</strong> en SQLite; registro generado</td>
+</tr>
+<tr>
+<td>03/11 14:56-15:05</td>
+<td><strong>Laptop · SQL Server</strong> (<code>scripts/evidencias_sqlserver.bat</code>)</td>
+<td>Casos CP-01…06 y CP-08…27, uno por uno: los 26 con código de salida 0</td>
+</tr>
+<tr>
+<td>03/11 15:14-15:19</td>
+<td>Desarrollo · Angular (build de producción) + Flask + SQLite</td>
+<td><strong>Fallo nuevo F08</strong> (CP-28): tras sincronizar, la pantalla no reflejaba el servidor. Corregido, recompilado en la laptop (15:17) y verificado con el mismo caso</td>
+</tr>
+<tr>
+<td>03/11 15:20-15:25</td>
+<td>Desarrollo · Angular + Flask + SQLite</td>
+<td>Capturas UI-01…UI-27 y CP-07 repetido; detalle HTTP obtenido de cada caso</td>
+</tr>
+<tr>
+<td>03/11 15:45-15:49</td>
+<td><strong>Laptop · SQL Server</strong> (<code>ScribeTracker_Pruebas</code>)</td>
+<td>Casos del reporte en una sola sesión: <strong>34 passed</strong> con el detalle HTTP obtenido (<code>docs/evidencias/salidas/obtenidos_sqlserver.xml</code>)</td>
+</tr>
+<tr>
+<td>03/11 15:50-15:52</td>
+<td><strong>Laptop · Angular (build 15:17) + Flask + SQL Server</strong> (<code>ScribeTracker_Pruebas</code>)</td>
+<td>29 capturas de pantalla reales en <code>docs/evidencias/sqlserver/</code> (incluye las 4 pendientes: UI-05, UI-07, UI-15, UI-18 y el PDF)</td>
+</tr>
+<tr>
+<td>03/11 15:52</td>
+<td><strong>Laptop · Angular + Flask + SQL Server</strong></td>
+<td><strong>F08 verificado con SQL Server</strong> (CP-28): 5 s después de recuperar la señal, la pantalla muestra Soriana "En curso" y sin CHECK-IN, igual que el servidor</td>
+</tr>
+</tbody>
+</table>
+<p>Todo lo de la laptop con SQL Server del 03/11 15:45 se hizo con <code>scripts\evidencias_sqlserver_interfaz.bat</code> (registro en <code>scripts\logs\sqlserver_interfaz.log</code>, resumen <code>pytest=0 interfaz=0 cp28=0</code>). Usa solo la base de pruebas: el servidor de capturas se niega a usar una base que no termine en <code>_Pruebas</code> o que sea la de <code>DB_NAME</code>.</p>
+<p>Fallos reales y correcciones: F01-F08 en <code>docs/pruebas/historial_fallos.json</code>; registros de texto originales de F01-F07 en <code>docs/pruebas/evidencias/</code>.</p>
+<h2 id="reporte-de-pruebas-con-imagenes-para-la-docente">Reporte de pruebas con imágenes (para la docente)</h2>
+<ul>
+<li><strong><code>docs/REPORTE_PRUEBAS.md</code></strong>: 28 casos con requisito, tipo de resultado (defecto, error de la prueba, rechazo esperado o flujo válido), datos, procedimiento, código, esperado, obtenido, estado, entorno e imágenes. Los 8 fallos tienen imagen antes y después, causa, archivo y fragmentos corregidos.</li>
+<li><strong><code>docs/evidencias/</code></strong>: 95 imágenes citadas en el reporte: <strong>35 generadas a partir de registros de texto</strong> (📄, no son capturas), <strong>58 capturas de pantalla reales</strong> (🖥️: 29 de desarrollo con SQLite y 29 + CP-28 de la laptop con SQL Server en <code>sqlserver/</code>) y 2 páginas de PDF. La sección 8 del reporte es el inventario con el origen de cada una. <code>salidas/</code> guarda los textos originales.</li>
+<li>Comprobación: <code>python scripts\evidencias\verificar_evidencias.py</code> abre cada imagen citada.</li>
+<li>Se regenera con <code>python scripts\evidencias\generar_reporte.py</code>.</li>
+<li><strong>Límites declarados en el reporte:</strong> las imágenes "antes" de F01-F07 son los registros de texto originales convertidos a imagen (no había capturas); las de resultado del backend son la salida de pytest en SQL Server convertida a imagen; E2E-01…09 y la verificación original de F07 (02/11) solo tienen registro de texto. Las capturas de SQLite se conservan junto a las de SQL Server. En UI-05 con SQL Server el mapa base no terminó de cargar (los datos sí).</li>
+<li>Los usuarios de demostración de las capturas ya no tienen contraseña escrita en el código: el orquestador genera una aleatoria en cada ejecución (variable <code>ST_DEMO_PASSWORD</code>).</li>
+</ul>
+<h2 id="lo-que-falta-actualizar-siguiente-paso">Lo que falta actualizar (siguiente paso)</h2>
+<ol>
+<li>~~Registro de pruebas~~, ~~reporte con imágenes~~, ~~detalle HTTP con SQL Server~~, ~~capturas con SQL Server~~ y ~~F08 con SQL Server~~: HECHO.</li>
+<li><strong>Respaldar en GitHub</strong> (todavía no hay commit de la etapa 2): <code>scripts\copiar_a_github.bat</code> copia a <code>Documents\GitHub\ScribeTracker</code> sin <code>.env</code>, respaldos, logs ni dependencias y revisa secretos con <code>scripts\revisar_antes_de_subir.py</code>; luego commit en una rama nueva desde GitHub Desktop. Pasos completos en el resumen de la sesión del 03/11.</li>
+<li>Revisión final a mano en Chrome con cámara real (guía en <code>README.md</code>, sección "Demostración"). El build actual (03/11 15:17) incluye F07 y F08.</li>
+<li>Borrar los archivos que ya no se usan (requiere permiso de borrado; también se pueden borrar a mano):
+   - <code>frontend/src/app/pages/inicio/</code> (pantallas de la etapa 1, reemplazadas por <code>promotor/</code> y <code>panel/</code>)
+   - <code>backend/.venv/_paquetes_para_pruebas.tgz</code> (copia temporal para pruebas)
+   - carpetas vacías <code>backend/.env_respaldo/</code> y <code>backend/.env.example_respaldo/</code> (ya ignoradas por <code>.gitignore</code>)</li>
+</ol>
+<h2 id="decisiones-pendientes-de-aprobacion-no-bloquean">Decisiones pendientes de aprobación (no bloquean)</h2>
+<ul>
+<li>Login por <strong>correo</strong> en lugar de ID de empleado (los prototipos piden ID).</li>
+<li><strong>Duración del bloqueo</strong> tras 3 intentos fallidos: hoy solo se cuentan los intentos.</li>
+<li><strong>Tolerancia 20 frente a 30 min</strong>: hoy son parámetros separados (retardo 20, alerta 30).</li>
+<li><strong>Cierre de jornada con tiendas pendientes</strong>: permitido con motivo y genera incidencia.</li>
+<li><strong>Cantidad de tiendas por día</strong>: advertencia fuera de 3-4, sin bloqueo.</li>
+<li><strong>Excel</strong>, <strong>Gerente de Zona</strong> y <strong>"solicitudes de ajuste"</strong> (RF-15): sin especificación suficiente.</li>
+<li><strong>WhatsApp o push</strong>: hoy solo notificación interna.</li>
+</ul>
+<h2 id="datos-de-prueba-en-la-base-real">Datos de prueba en la base real</h2>
+<ul>
+<li>Usuarios de prueba: <code>admin.prueba@</code>, <code>supervisor.prueba@</code>, <code>promotor.prueba@</code> e <code>inactivo.prueba@scribetracker.test</code>. Sus contraseñas están solo en <code>scripts\logs\usuarios_prueba.txt</code> (no se sube a Git).</li>
+<li><code>scripts\datos_demo.bat</code> crea 4 tiendas de León y asigna las tiendas del día al promotor de prueba. Las coordenadas quedan en <code>scripts\logs\datos_demo.log</code>.</li>
+<li>En la base real quedaron registros de la demostración del 02/11: una jornada, 2 visitas, 7 fotos y un reporte.</li>
+</ul>
+<h2 id="archivos-clave">Archivos clave</h2>
+<ul>
+<li>Backend: <code>backend/app/models/operacion.py</code> (modelo), <code>backend/app/servicios/operacion.py</code> (reglas), <code>backend/app/routes/*.py</code> (API).</li>
+<li>Migración: <code>backend/migrations/versions/c87399dedb00_etapa_2_tiendas_rutas_jornadas.py</code>.</li>
+<li>Frontend: <code>frontend/src/app/promotor/</code> (móvil), <code>frontend/src/app/panel/</code> (supervisión y administración), <code>frontend/src/app/core/cola.service.ts</code> (sin conexión).</li>
+<li>Pruebas: <code>backend/tests/</code>, <code>scripts/pruebas.bat</code>, <code>docs/pruebas/</code>.</li>
+<li>Evidencias: <code>scripts/evidencias/</code> (casos, ejecución en SQL Server, capturas de interfaz con Playwright, reproducción de F08, generador y verificador del reporte), <code>docs/evidencias/</code>, <code>docs/REPORTE_PRUEBAS.md</code>.</li>
+<li>Documentos: <code>docs/MATRIZ_REQUISITOS.md</code>, este archivo y <code>README.md</code>.</li>
+</ul></main>
+<script>document.querySelectorAll('main img').forEach(function (i) {
+  i.loading = 'lazy'; i.addEventListener('click', function () { i.classList.toggle('grande'); }); });</script>
+</body></html>

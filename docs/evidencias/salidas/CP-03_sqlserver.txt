@@ -1,0 +1,16 @@
+CP-03 · Flujo completo de jornada con dos tiendas
+Fecha y hora: 03/11/2026 14:56:37  ·  Equipo: Laptop15-Elizabeth  ·  Windows 11  ·  Python 3.13.17
+Base de datos: SQL Server, base de pruebas ScribeTracker_Pruebas (ST_BD_PRUEBAS)
+Carpeta: C:\ScribeTracker\backend
+> set ST_BD_PRUEBAS=ScribeTracker_Pruebas
+> python -m pytest tests/test_jornada.py::test_J07_flujo_completo -v
+
+============================= test session starts =============================
+collecting ... collected 1 item
+
+tests/test_jornada.py::test_J07_flujo_completo PASSED                    [100%]
+
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/test_jornada.py::test_J07_flujo_completo
+============================= 1 passed in 16.88s ==============================

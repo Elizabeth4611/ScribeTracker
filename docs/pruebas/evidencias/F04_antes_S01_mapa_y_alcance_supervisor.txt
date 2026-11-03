@@ -1,0 +1,7 @@
+E       AssertionError: assert {None, 'P3', 'P2', 'P1'} == {'P1', 'P2', 'P3'}
+E         
+E         Extra items in the left set:
+E         None
+E         Use -v to get more diff
+tests/test_supervision_reportes.py:151: AssertionError
+1 failed in 0.25s

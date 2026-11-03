@@ -1,0 +1,120 @@
+[
+ {
+  "id": "F01",
+  "prueba": "AUT01 test_login_correcto_devuelve_rol_sin_hash",
+  "funciones": [
+   "test_login_correcto_devuelve_rol_sin_hash"
+  ],
+  "clasificacion": "Fallo de la prueba (aserción demasiado amplia); el sistema no exponía contraseñas",
+  "causa": "La prueba buscaba la palabra \"password\" en toda la respuesta y la nueva bandera booleana debe_cambiar_password la contenía.",
+  "archivo": "backend/tests/test_auth.py",
+  "cambio": "Se verifica que ni la contraseña ni su hash (completo o parcial) aparezcan en la respuesta, y que no existan las claves password/password_hash.",
+  "despues": "Misma prueba: 1 passed (entorno de desarrollo); 91/91 en la laptop",
+  "evidencia_antes": "evidencias/F01_antes_password_en_respuesta.txt",
+  "evidencia_despues": "evidencias/F01_despues_password_en_respuesta.txt",
+  "entorno": "Desarrollo (Linux, SQLite)"
+ },
+ {
+  "id": "F02",
+  "prueba": "U10 La contraseña temporal obliga a cambiarla",
+  "funciones": [
+   "test_U10_contrasena_temporal_obliga_cambio"
+  ],
+  "clasificacion": "Defecto real del sistema (error 500 en tiempo de ejecución)",
+  "causa": "error(mensaje, codigo, **extra) recibía también codigo=\"cambiar_password\" como dato extra: TypeError al responder a un usuario con contraseña temporal.",
+  "archivo": "backend/app/auth.py",
+  "cambio": "El parámetro del código HTTP se renombró a http; el dato extra codigo queda en la respuesta JSON.",
+  "despues": "Misma prueba: 1 passed; suite completa 44 passed",
+  "evidencia_antes": "evidencias/F02_antes_error_codigo_duplicado.txt",
+  "evidencia_despues": "evidencias/F02_despues_error_codigo_duplicado.txt",
+  "entorno": "Desarrollo (Linux, SQLite)"
+ },
+ {
+  "id": "F03",
+  "prueba": "J07 Flujo completo de la jornada",
+  "funciones": [
+   "test_J07_flujo_completo"
+  ],
+  "clasificacion": "Error en los datos de la prueba; el sistema aplicó correctamente la regla",
+  "causa": "El check-in se programó a las 08:00, antes del inicio de jornada (08:05). El servidor respondió 400 \"La hora del registro es anterior al inicio de tu jornada\".",
+  "archivo": "backend/tests/test_jornada.py",
+  "cambio": "La primera visita empieza a las 08:10 (y su salida a las 09:40).",
+  "despues": "Misma prueba: 1 passed",
+  "evidencia_antes": "evidencias/F03_antes_J07_checkin_antes_de_jornada.txt",
+  "evidencia_despues": "evidencias/F03_despues_J07_checkin_antes_de_jornada.txt",
+  "entorno": "Desarrollo (Linux, SQLite)"
+ },
+ {
+  "id": "F04",
+  "prueba": "S01 Mapa y alcance del supervisor",
+  "funciones": [
+   "test_S01_mapa_y_alcance_supervisor"
+  ],
+  "clasificacion": "Error en el diseño de la prueba",
+  "causa": "Se esperaban 3 promotores para el administrador, pero los datos base de la etapa 1 incluyen a \"Pedro Promotor\" (activo, sin número de empleado).",
+  "archivo": "backend/tests/test_supervision_reportes.py",
+  "cambio": "Se comparan los nombres de los 4 promotores activos.",
+  "despues": "Misma prueba: 1 passed",
+  "evidencia_antes": "evidencias/F04_antes_S01_mapa_y_alcance_supervisor.txt",
+  "evidencia_despues": "evidencias/F04_despues_S01_mapa_y_alcance_supervisor.txt",
+  "entorno": "Desarrollo (Linux, SQLite)"
+ },
+ {
+  "id": "F05",
+  "prueba": "S02 Ubicación desactualizada",
+  "funciones": [
+   "test_S02_ubicacion_desactualizada"
+  ],
+  "clasificacion": "Error en el diseño de la prueba",
+  "causa": "La prueba tomaba el primer promotor de la lista suponiendo que era P1; la lista se ordena por nombre (Julieta antes que Marco).",
+  "archivo": "backend/tests/test_supervision_reportes.py",
+  "cambio": "Se busca a P1 por su número de empleado.",
+  "despues": "Misma prueba: 1 passed",
+  "evidencia_antes": "evidencias/F05_antes_S02_ubicacion_desactualizada.txt",
+  "evidencia_despues": "evidencias/F05_despues_S02_ubicacion_desactualizada.txt",
+  "entorno": "Desarrollo (Linux, SQLite)"
+ },
+ {
+  "id": "F06",
+  "prueba": "REP02 Exportar reporte de exhibición a PDF",
+  "funciones": [
+   "test_REP02_pdf_y_permisos"
+  ],
+  "clasificacion": "Defecto real del sistema (error 500 al exportar)",
+  "causa": "reportlab lee las imágenes al construir el documento; un archivo de evidencia dañado o no decodificable hacía fallar todo el PDF (OSError).",
+  "archivo": "backend/app/servicios/reportes.py",
+  "cambio": "Nueva función _imagen_segura: verifica cada imagen con Pillow antes de incluirla y la sustituye por \"(imagen no disponible)\" si es inválida.",
+  "despues": "Misma prueba: 1 passed; además REP04 confirma 4 fotos reales incrustadas",
+  "evidencia_antes": "evidencias/F06_antes_REP02_pdf_y_permisos.txt",
+  "evidencia_despues": "evidencias/F06_despues_REP02_pdf_y_permisos.txt",
+  "entorno": "Desarrollo (Linux, SQLite)"
+ },
+ {
+  "id": "F07",
+  "prueba": "E2E-07 Sincronización sin conexión en la interfaz",
+  "funciones": [],
+  "clasificacion": "Defecto real del sistema (la cola sin conexión nunca reintentaba)",
+  "causa": "En ColaService.sincronizar(), sin pendientes la función async terminaba de forma síncrona y su finally limpiaba enCurso antes de asignarse la promesa; enCurso quedaba ocupado y no se volvía a sincronizar.",
+  "archivo": "frontend/src/app/core/cola.service.ts",
+  "cambio": "La promesa se guarda en una variable y enCurso se libera en .finally() solo si sigue siendo la misma ejecución.",
+  "despues": "Misma prueba en la laptop: los 2 eventos pendientes se enviaron al recargar; 0 pendientes; registros con origen \"Sin conexión\" y horas de captura conservadas",
+  "evidencia_antes": "evidencias/F07_antes_sincronizacion_bloqueada.txt",
+  "evidencia_despues": "evidencias/F07_despues_sincronizacion_bloqueada.txt",
+  "entorno": "Laptop (navegador + Flask + SQL Server)"
+ },
+ {
+  "id": "F08",
+  "prueba": "CP-28 Pantalla actualizada al terminar la sincronización",
+  "funciones": [
+   "scripts/evidencias/reproducir_sincronizacion.py"
+  ],
+  "clasificacion": "Defecto real del sistema (la pantalla mostraba un estado distinto al del servidor después de sincronizar)",
+  "causa": "Al terminar la sincronización la cola quitaba los pendientes, pero la pantalla del promotor no volvía a leer /api/promotor/hoy hasta el refresco de 60 s: Soriana seguía 'Por visitar' con CHECK-IN aunque el servidor ya tenía la visita abierta.",
+  "archivo": "frontend/src/app/core/cola.service.ts; frontend/src/app/promotor/promotor.service.ts",
+  "cambio": "ColaService avisa a sus oyentes (alSincronizar) al terminar cada sincronización; PromotorService vuelve a cargar el estado del servidor si hay red.",
+  "despues": "Mismo caso: 5 s después de recuperar la señal la pantalla muestra Soriana 'En curso' y sin CHECK-IN, igual que el servidor",
+  "evidencia_antes": "../evidencias/CP-28_antes.png",
+  "evidencia_despues": "../evidencias/CP-28_despues.png",
+  "entorno": "Angular (build de producción) + Flask + SQLite de pruebas (desarrollo), 03/11/2026"
+ }
+]

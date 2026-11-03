@@ -1,0 +1,3432 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reporte de pruebas · ScribeTracker</title><style>
+:root { --fondo:#f7f7f8; --papel:#ffffff; --texto:#1f2328; --suave:#57606a; --borde:#d0d7de; --acento:#d4001a; --codigo:#f3f4f6; }
+@media (prefers-color-scheme: dark) { :root { --fondo:#0d1117; --papel:#161b22; --texto:#e6edf3; --suave:#9da7b3; --borde:#30363d; --acento:#ff5a6a; --codigo:#1f2630; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--fondo); color:var(--texto); font:16px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif; }
+.barra { position:sticky; top:0; z-index:5; background:var(--papel); border-bottom:1px solid var(--borde); padding:10px 16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+.barra b { color:var(--acento); }
+.barra a { color:var(--texto); text-decoration:none; font-size:13px; white-space:nowrap; }
+.barra a:hover { text-decoration:underline; }
+main { max-width:1100px; margin:0 auto; padding:24px 16px 80px; background:var(--papel); }
+h1 { color:var(--acento); margin-top:0; }
+h2, h3 { scroll-margin-top:64px; }
+h2 { border-bottom:2px solid var(--borde); padding-bottom:4px; margin-top:48px; }
+h3 { margin-top:40px; padding:6px 10px; background:var(--codigo); border-left:4px solid var(--acento); border-radius:4px; }
+table { border-collapse:collapse; width:100%; margin:12px 0; font-size:14px; display:block; overflow-x:auto; }
+th, td { border:1px solid var(--borde); padding:6px 8px; vertical-align:top; text-align:left; }
+th { background:var(--codigo); }
+code { background:var(--codigo); padding:1px 4px; border-radius:4px; font-size:13px; }
+pre { background:var(--codigo); padding:12px; border-radius:6px; overflow-x:auto; }
+pre code { padding:0; }
+img { max-width:100%; height:auto; border:1px solid var(--borde); border-radius:6px; display:block; margin:12px auto 4px; cursor:zoom-in; }
+img.grande { position:fixed; inset:0; margin:auto; max-width:96vw; max-height:96vh; z-index:20; cursor:zoom-out; box-shadow:0 0 0 100vmax rgba(0,0,0,.75); }
+blockquote { margin:12px 0; padding:8px 16px; border-left:4px solid #e3b341; background:var(--codigo); }
+p em { color:var(--suave); }
+</style></head>
+<body><nav class="barra"><b>Reporte de pruebas · ScribeTracker</b><a href="#1-como-leer-este-reporte" title="1. Cómo leer este reporte">1. Cómo leer…</a> <a href="#2-entornos-de-ejecucion" title="2. Entornos de ejecución">2. Entornos de…</a> <a href="#3-resumen" title="3. Resumen">3. Resumen</a> <a href="#4-casos-de-prueba" title="4. Casos de prueba">4. Casos de…</a> <a href="#5-pruebas-desde-angular-en-la-laptop-con-sql-server-real-e2e" title="5. Pruebas desde Angular en la laptop con SQL Server real (E2E)">5. Pruebas desde…</a> <a href="#6-anexo-a-recorrido-de-la-interfaz-con-sql-server-laptop" title="6. Anexo A: recorrido de la interfaz con SQL Server (laptop)">6. Anexo A:…</a> <a href="#6b-anexo-b-recorrido-de-la-interfaz-original-desarrollo-sqlite" title="6b. Anexo B: recorrido de la interfaz original (desarrollo, SQLite)">6b. Anexo B:…</a> <a href="#7-las-cuatro-capturas-con-sql-server-que-estaban-pendientes" title="7. Las cuatro capturas con SQL Server que estaban pendientes">7. Las cuatro…</a> <a href="#8-inventario-de-imagenes-y-su-origen" title="8. Inventario de imágenes y su origen">8. Inventario de…</a></nav><main><h1 id="reporte-de-pruebas-scribetracker">Reporte de pruebas · ScribeTracker</h1>
+<p>Entrega: miércoles 4 de noviembre de 2026. Generado con <code>scripts/evidencias/generar_reporte.py</code> a partir de las salidas reales guardadas en <code>docs/evidencias/</code> y <code>docs/pruebas/</code>. No se editó ningún resultado a mano.</p>
+<h2 id="1-como-leer-este-reporte">1. Cómo leer este reporte</h2>
+<p>Cada caso (CP) tiene: requisito, tipo de resultado, datos, procedimiento, código de la prueba, resultado esperado, resultado obtenido, estado, entorno e imágenes. Los casos con fallo incluyen además la captura <strong>antes</strong>, la causa, el archivo y fragmento corregidos, y la captura <strong>después</strong> del mismo caso.</p>
+<p><strong>Tipos de resultado:</strong></p>
+<ul>
+<li><strong>Defecto real del sistema:</strong> la aplicación hacía algo incorrecto y se corrigió el código de la aplicación (F02, F06, F07, F08).</li>
+<li><strong>Error en la prueba:</strong> la aplicación estaba bien y lo que se corrigió fue la prueba (datos o aserción) (F01, F03, F04, F05).</li>
+<li><strong>Rechazo esperado:</strong> la prueba <em>pasa</em> porque el sistema rechaza correctamente una acción inválida (por ejemplo, check-out sin las 4 fotos). No es un fallo.</li>
+<li><strong>Flujo válido:</strong> la prueba pasa porque el sistema acepta y registra correctamente una acción válida.</li>
+</ul>
+<h2 id="2-entornos-de-ejecucion">2. Entornos de ejecución</h2>
+<table>
+<thead>
+<tr>
+<th>Entorno</th>
+<th>Qué se ejecutó</th>
+<th>Fecha</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Laptop con SQL Server</strong> (<code>ScribeTracker_Pruebas</code>, base separada de la real)</td>
+<td>Suite completa del backend: 91 de 91. Casos CP-01 a CP-06 (después) y CP-08 a CP-27, uno por uno, con <code>scripts\evidencias_sqlserver.bat</code></td>
+<td>02/11/2026 22:59 y 23:26; 03/11/2026 14:56-15:05</td>
+</tr>
+<tr>
+<td><strong>Laptop: navegador + Flask + SQL Server real</strong> (<code>ScribeTracker</code>)</td>
+<td>Pruebas E2E-01 a E2E-09 desde Angular; aquí se encontró y verificó F07 (CP-07)</td>
+<td>02/11/2026 23:20-23:26</td>
+</tr>
+<tr>
+<td><strong>Desarrollo, SQLite</strong></td>
+<td>Donde se detectaron F01-F06 (CP-01 a CP-06, antes). También el detalle HTTP "obtenido" de cada caso (sección 4)</td>
+<td>02/11/2026 22:30-22:50; 03/11/2026</td>
+</tr>
+<tr>
+<td><strong>Angular (build de producción) + Flask + SQLite de pruebas, en desarrollo</strong></td>
+<td>Capturas de pantalla UI-01 a UI-27, CP-07 (verificación repetida) y CP-28 (F08 antes y después). Ubicación simulada y cámara simulada de Chromium</td>
+<td>03/11/2026</td>
+</tr>
+<tr>
+<td><strong>Laptop: Angular (build de producción) + Flask + SQL Server</strong> (<code>ScribeTracker_Pruebas</code>), con <code>scripts\evidencias_sqlserver_interfaz.bat</code></td>
+<td>Detalle HTTP obtenido de cada caso en SQL Server; capturas de pantalla UI-01 a UI-27 en <code>docs/evidencias/sqlserver/</code> (28); CP-28 (F08) repetido con SQL Server</td>
+<td>03/11/2026</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Limitaciones de la evidencia, dicho con claridad:</strong></p>
+<ul>
+<li>Los fallos F01-F07 se registraron en su momento como <strong>texto</strong> (salida de pytest o del navegador), no como capturas de pantalla. Las imágenes "antes" de CP-01 a CP-07 son ese texto original convertido a imagen, sin editar (marcadas 📄). Para F04 y F05 solo se guardó el fragmento de la aserción.</li>
+<li>Las imágenes de resultado de las pruebas del backend (CP-xx_despues y CP-xx_resultado) también son texto: la salida real de pytest en SQL Server convertida a imagen (📄).</li>
+<li>Las pruebas E2E-01 a E2E-09 y la verificación original de F07 (02/11) se hicieron en el navegador integrado de la laptop, que no guarda capturas: solo hay registro de texto.</li>
+<li>Las capturas de pantalla (🖥️) existen en dos juegos: el original en desarrollo con SQLite (<code>docs/evidencias/UI-*.png</code>) y el repetido en la laptop con SQL Server (<code>docs/evidencias/sqlserver/UI-*.png</code>). Se conservan ambos.</li>
+<li>El detalle HTTP "obtenido" se muestra de la ejecución en SQL Server; el de SQLite se conserva debajo como referencia original.</li>
+</ul>
+</blockquote>
+<h2 id="3-resumen">3. Resumen</h2>
+<table>
+<thead>
+<tr>
+<th>Caso</th>
+<th>Nombre</th>
+<th>Requisito</th>
+<th>Tipo de resultado</th>
+<th>Estado final</th>
+<th>Entorno de la evidencia final</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CP-01</td>
+<td>Login no expone contraseña ni hash</td>
+<td>RF-01 (3.6) Inicio de sesión; RNF-16 Seguridad (no exponer contraseñas)</td>
+<td>Fallo F01: Error en la prueba (aserción demasiado amplia)</td>
+<td>Exitosa (después de corregir)</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-02</td>
+<td>Contraseña temporal obliga a cambiarla</td>
+<td>RF-03 (3.6) entrega de acceso; RNF-16 seguridad</td>
+<td>Fallo F02: Defecto real del sistema (error 500 al responder a un usuario con contraseña temporal)</td>
+<td>Exitosa (después de corregir)</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-03</td>
+<td>Flujo completo de jornada con dos tiendas</td>
+<td>RF-01, RF-03, RF-04, RF-05, RF-06, RF-07</td>
+<td>Fallo F03: Error en los datos de la prueba</td>
+<td>Exitosa (después de corregir)</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-04</td>
+<td>Mapa y alcance del supervisor</td>
+<td>RF-10 Mapa en tiempo real; RF-02; estados de cuenta, jornada, visita y conexión</td>
+<td>Fallo F04: Error en el diseño de la prueba</td>
+<td>Exitosa (después de corregir)</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-05</td>
+<td>Ubicación reciente y desactualizada</td>
+<td>RF-10; excepción del modelo de diseño (promotor sin señal se muestra como desconectado)</td>
+<td>Fallo F05: Error en el diseño de la prueba</td>
+<td>Exitosa (después de corregir)</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-06</td>
+<td>Exportar reporte de exhibición a PDF</td>
+<td>RF-16 Exportar reportes (PDF); entrevista P26 (imágenes de anaquel, precios y promociones)</td>
+<td>Fallo F06: Defecto real del sistema (error 500 al exportar el PDF si una foto estaba dañada)</td>
+<td>Exitosa (después de corregir)</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-07</td>
+<td>Sincronización de eventos sin conexión (Angular)</td>
+<td>RNF-08 / RNF-09 (sin conexión)</td>
+<td>Fallo F07: Defecto real del sistema (la cola sin conexión dejaba de reintentar)</td>
+<td>Exitosa (después de corregir)</td>
+<td>Angular + SQL Server real (laptop)</td>
+</tr>
+<tr>
+<td>CP-08</td>
+<td>Acceso por rol (matriz de permisos)</td>
+<td>RF-01 (3.6); RNF-16 Control de acceso por rol (comprobado en el servidor)</td>
+<td>Flujo válido y rechazos esperados</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-09</td>
+<td>Rechazo de cuenta inactiva</td>
+<td>RF-01 (3.6) Inicio de sesión: estatus Activo; RF-06 Baja lógica</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-10</td>
+<td>Petición manipulada: solo el administrador registra usuarios</td>
+<td>RF-03 (3.6); RNF-16 control de acceso por rol</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-11</td>
+<td>Campos obligatorios en el alta de usuarios</td>
+<td>RF-03 (3.6); RF-23 Mensajes de error</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-12</td>
+<td>Correo y número de empleado duplicados</td>
+<td>RF-03 (3.6) número de empleado único; correo UNIQUE (diccionario)</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-13</td>
+<td>Promotor sin acceso a registros ajenos</td>
+<td>RNF-16 Seguridad de la información</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-14</td>
+<td>Supervisor limitado a su ámbito</td>
+<td>RF-09; RNF-16 (supervisor limitado a su ámbito)</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-15</td>
+<td>Inicio de jornada en la primera tienda</td>
+<td>RF-01 Inicio de jornada; reglas C1 y C2</td>
+<td>Flujo válido</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-16</td>
+<td>Rechazo de inicio fuera de la primera tienda</td>
+<td>RF-01; regla C2</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-17</td>
+<td>Una sola jornada por fecha</td>
+<td>RF-01; regla C1</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-18</td>
+<td>Check-in separado del inicio de jornada</td>
+<td>RF-03 Check-in; reglas C3 y C4</td>
+<td>Flujo válido</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-19</td>
+<td>Dos visitas abiertas y visita duplicada</td>
+<td>RF-03; regla C9</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-20</td>
+<td>Foto fuera de geocerca no cuenta</td>
+<td>RF-12 Validación automática; regla D (fuera de geocerca no completa la visita)</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-21</td>
+<td>Check-out bloqueado por categorías faltantes</td>
+<td>RF-04 Check-out; regla D (servidor comprueba las 4 categorías y comunica faltantes)</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-22</td>
+<td>Check-out válido sin cerrar la jornada</td>
+<td>RF-04; reglas C5, C6 y C7</td>
+<td>Flujo válido</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-23</td>
+<td>Cierre de jornada con visitas pendientes</td>
+<td>RF-01/RF-04; reglas C7, C8 y C9</td>
+<td>Flujo válido</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-24</td>
+<td>Seguimiento suspendido en pausa y tras el cierre</td>
+<td>RF-02, RF-08; Limitación 7 (no rastrea fuera de jornada ni en pausa)</td>
+<td>Flujo válido</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-25</td>
+<td>Reintentos sin duplicados</td>
+<td>RNF-08/RNF-09 sincronización; regla C9 (sin duplicados)</td>
+<td>Flujo válido</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-26</td>
+<td>Reporte consistente con los registros</td>
+<td>RF-13, RF-15 Reportes de desempeño</td>
+<td>Flujo válido</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-27</td>
+<td>Coordenadas obligatorias de tienda</td>
+<td>RF-19; excepción del modelo de diseño ("Las coordenadas GPS son obligatorias...")</td>
+<td>Rechazo esperado</td>
+<td>Exitosa</td>
+<td>SQL Server (laptop)</td>
+</tr>
+<tr>
+<td>CP-28</td>
+<td>Pantalla actualizada al terminar la sincronización</td>
+<td>RNF-08 / RNF-09; RF-03</td>
+<td>Fallo F08: Defecto real del sistema</td>
+<td>Exitosa (después de corregir)</td>
+<td>Angular + SQL Server (laptop) y Angular + SQLite (desarrollo)</td>
+</tr>
+</tbody>
+</table>
+<p>Total: 28 casos documentados. <strong>8 fallos reales</strong> encontrados durante el desarrollo (F01-F08): 4 defectos del sistema y 4 errores de las pruebas, todos corregidos y verificados con el mismo caso. 12 casos comprueban rechazos esperados.</p>
+<h2 id="4-casos-de-prueba">4. Casos de prueba</h2>
+<h3 id="cp-01-login-no-expone-contrasena-ni-hash">CP-01 · Login no expone contraseña ni hash</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_auth.py::test_login_correcto_devuelve_rol_sin_hash</code> (etapa 1, sin docstring; campos tomados del código)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-01 (3.6) Inicio de sesión; RNF-16 Seguridad (no exponer contraseñas)</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td>Fallo <strong>F01</strong> · Error en la prueba (aserción demasiado amplia). El sistema no exponía contraseñas.</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>Usuario promotor@test.mx Activo con contraseña conocida (hash Werkzeug)</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>POST /api/auth/login con correo y contraseña correctos</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_auth.py::test_login_correcto_devuelve_rol_sin_hash -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 200 con rol Promotor; la respuesta no contiene la contraseña, ni el hash (completo o parcial), ni las claves password/password_hash</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 14:55:59): <strong>1 passed in 13.48s</strong><br>Ejecución conjunta en SQL Server (1 passed): (la prueba no registra detalle HTTP; solo aserciones)</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa después de corregir (antes: fallida)</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code>; el fallo original ocurrió en Entorno de desarrollo (Linux · Python 3.13 · <strong>SQLite</strong> de pruebas)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_login_correcto_devuelve_rol_sin_hash(client):
+    r = login(client, &quot;promotor@test.mx&quot;)
+    assert r.status_code == 200
+    usuario = r.get_json()[&quot;usuario&quot;]
+    assert usuario[&quot;rol&quot;] == &quot;Promotor&quot;
+    assert &quot;password_hash&quot; not in usuario
+    assert &quot;password&quot; not in usuario
+    # Corrección F01: la comprobación anterior buscaba la palabra
+    # &quot;password&quot; en todo el texto y fallaba con la bandera booleana
+    # debe_cambiar_password. Ahora se verifica lo importante: que ni la
+    # contraseña ni su hash aparezcan en la respuesta.
+    texto = r.get_data(as_text=True)
+    assert PASSWORD not in texto
+    with client.application.app_context():
+        h = db.session.execute(db.select(Usuario.password_hash).where(
+            Usuario.correo_electronico == &quot;promotor@test.mx&quot;)).scalar_one()
+    assert h not in texto and h.split(&quot;$&quot;)[-1] not in texto
+</code></pre>
+<p><strong>Antes de corregir (F01)</strong> · registro original del fallo</p>
+<p><img alt="CP-01 antes: salida original del fallo F01" src="evidencias/CP-01_antes.png" /></p>
+<p><em>CP-01 antes: salida original del fallo F01</em> — <code>docs/evidencias/CP-01_antes.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de un registro de texto original (no es captura de pantalla)</p>
+<ul>
+<li><strong>Causa:</strong> La prueba buscaba la palabra "password" en toda la respuesta. Al agregar la bandera booleana <code>debe_cambiar_password</code> (cambio obligatorio de contraseña temporal) la palabra aparecía en el nombre del campo, aunque no había ninguna contraseña ni hash.</li>
+<li><strong>Archivo corregido:</strong> <code>backend/tests/test_auth.py</code></li>
+<li><strong>Fragmento antes:</strong></li>
+</ul>
+<pre><code>assert &quot;password&quot; not in str(r.get_json()).lower()
+</code></pre>
+<ul>
+<li><strong>Fragmento después:</strong></li>
+</ul>
+<pre><code>assert &quot;password&quot; not in usuario
+# ...
+texto = r.get_data(as_text=True)
+assert PASSWORD not in texto
+# además se comprueba que el hash (completo o parcial) no aparece
+</code></pre>
+<ul>
+<li><strong>Por qué ahora pasa:</strong> Ahora se comprueba lo que exige el requisito (que la contraseña y su hash no viajen en la respuesta) y no el nombre de un campo booleano.</li>
+</ul>
+<p><strong>Después de corregir</strong> · el mismo caso, repetido en SQL Server</p>
+<p><img alt="CP-01 después: misma prueba en SQL Server" src="evidencias/CP-01_despues.png" /></p>
+<p><em>CP-01 después: misma prueba en SQL Server</em> — <code>docs/evidencias/CP-01_despues.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-02-contrasena-temporal-obliga-a-cambiarla">CP-02 · Contraseña temporal obliga a cambiarla</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_usuarios.py::test_U10_contrasena_temporal_obliga_cambio</code> (U10 · La contraseña temporal obliga a cambiarla)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-03 (3.6) entrega de acceso; RNF-16 seguridad</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td>Fallo <strong>F02</strong> · <strong>Defecto real del sistema</strong> (error 500 al responder a un usuario con contraseña temporal).</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>usuario recién creado con contraseña temporal</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>login con la temporal, consulta su inicio, cambia la contraseña y vuelve a consultar</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_usuarios.py::test_U10_contrasena_temporal_obliga_cambio -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>antes del cambio HTTP 403 (codigo cambiar_password); después HTTP 200</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 14:56:19): <strong>1 passed in 12.26s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 200 · Contraseña actualizada correctamente.<br>Detalle original (ejecución con SQLite): HTTP 200 · Contraseña actualizada correctamente.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa después de corregir (antes: fallida)</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code>; el fallo original ocurrió en Entorno de desarrollo (Linux · Python 3.13 · <strong>SQLite</strong> de pruebas)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_U10_contrasena_temporal_obliga_cambio(app, esc, obs):
+    &quot;&quot;&quot;U10 · La contraseña temporal obliga a cambiarla
+    RF: RF-03 (3.6) entrega de acceso; RNF-16 seguridad
+    Tipo: válido / restricción
+    Pre: usuario recién creado con contraseña temporal
+    Entrada: login con la temporal, consulta su inicio, cambia la contraseña y vuelve a consultar
+    Esperado: antes del cambio HTTP 403 (codigo cambiar_password); después HTTP 200
+    &quot;&quot;&quot;
+    admin = cliente(app, &quot;admin@test.mx&quot;)
+    temporal = admin.post(&quot;/api/usuarios&quot;, json={**NUEVO, &quot;id_supervisor&quot;: esc.ids.s1}).get_json()[&quot;acceso&quot;][&quot;password_temporal&quot;]
+    c = app.test_client()
+    assert c.post(&quot;/api/auth/login&quot;, json={&quot;correo&quot;: &quot;ana@test.mx&quot;, &quot;password&quot;: temporal}).status_code == 200
+    assert c.get(&quot;/api/inicio/promotor&quot;).get_json()[&quot;codigo&quot;] == &quot;cambiar_password&quot;
+    r = obs(c.post(&quot;/api/auth/cambiar-password&quot;, json={&quot;password_actual&quot;: temporal, &quot;password_nueva&quot;: &quot;NuevaClave2026&quot;}))
+    assert r.status_code == 200
+    assert c.get(&quot;/api/inicio/promotor&quot;).status_code == 200
+</code></pre>
+<p><strong>Antes de corregir (F02)</strong> · registro original del fallo</p>
+<p><img alt="CP-02 antes: salida original del fallo F02" src="evidencias/CP-02_antes.png" /></p>
+<p><em>CP-02 antes: salida original del fallo F02</em> — <code>docs/evidencias/CP-02_antes.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de un registro de texto original (no es captura de pantalla)</p>
+<ul>
+<li><strong>Causa:</strong> <code>error(mensaje, codigo, **extra)</code> recibía el código HTTP como segundo parámetro llamado <code>codigo</code> y también el dato extra <code>codigo="cambiar_password"</code>: Python lanzaba <code>TypeError: got multiple values for argument 'codigo'</code>.</li>
+<li><strong>Archivo corregido:</strong> <code>backend/app/auth.py</code></li>
+<li><strong>Fragmento antes:</strong></li>
+</ul>
+<pre><code>def error(mensaje, codigo=400, **extra):
+    ...
+return error(&quot;Debes cambiar tu contraseña temporal antes de continuar.&quot;, 403,
+             codigo=&quot;cambiar_password&quot;)
+</code></pre>
+<ul>
+<li><strong>Fragmento después:</strong></li>
+</ul>
+<pre><code>def error(mensaje: str, http: int = 400, **extra):
+    return jsonify(error=mensaje, **extra), http
+</code></pre>
+<ul>
+<li><strong>Por qué ahora pasa:</strong> El código HTTP ya no se llama igual que el dato extra, así que la respuesta 403 con <code>codigo: cambiar_password</code> se construye sin error y la prueba recibe lo esperado.</li>
+</ul>
+<p><strong>Después de corregir</strong> · el mismo caso, repetido en SQL Server</p>
+<p><img alt="CP-02 después: misma prueba en SQL Server" src="evidencias/CP-02_despues.png" /></p>
+<p><em>CP-02 después: misma prueba en SQL Server</em> — <code>docs/evidencias/CP-02_despues.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-03-flujo-completo-de-jornada-con-dos-tiendas">CP-03 · Flujo completo de jornada con dos tiendas</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_J07_flujo_completo</code> (J07 · Flujo completo de la jornada con dos tiendas)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-01, RF-03, RF-04, RF-05, RF-06, RF-07</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td>Fallo <strong>F03</strong> · Error en los datos de la prueba. El sistema aplicó correctamente la regla.</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 con Walmart y Soriana asignadas</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>iniciar, check-in, 4 fotos, check-out en cada tienda y finalizar sin forzar</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_J07_flujo_completo -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>jornada Finalizada sin cierre forzado; historial con 2 tiendas visitadas y 8 fotos</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 14:56:37): <strong>1 passed in 16.88s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 200 · Jornada finalizada. El seguimiento de ubicación se detuvo.<br>Detalle original (ejecución con SQLite): HTTP 200 · Jornada finalizada. El seguimiento de ubicación se detuvo.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa después de corregir (antes: fallida)</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code>; el fallo original ocurrió en Entorno de desarrollo (Linux · Python 3.13 · <strong>SQLite</strong> de pruebas)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_J07_flujo_completo(app, esc, obs):
+    &quot;&quot;&quot;J07 · Flujo completo de la jornada con dos tiendas
+    RF: RF-01, RF-03, RF-04, RF-05, RF-06, RF-07
+    Tipo: válido (integración)
+    Pre: P1 con Walmart y Soriana asignadas
+    Entrada: iniciar, check-in, 4 fotos, check-out en cada tienda y finalizar sin forzar
+    Esperado: jornada Finalizada sin cierre forzado; historial con 2 tiendas visitadas y 8 fotos
+    &quot;&quot;&quot;
+    c = _p1(app)
+    _iniciar(c, esc)
+    # Corrección F03: el check-in de la primera tienda estaba a las 08:00,
+    # antes del inicio de jornada (08:05), y el servidor lo rechazó con
+    # razón. Ahora la primera visita empieza a las 08:10.
+    for idx, h in ((0, 8), (1, 11)):
+        a_las(h, 10)
+        idv = _checkin(c, esc, idx=idx, metros=5).get_json()[&quot;visita&quot;][&quot;id_visita&quot;]
+        _cuatro_fotos(c, esc, idv, idx=idx)
+        a_las(h + 1, 40)
+        assert c.post(&quot;/api/promotor/visitas/checkout&quot;, json={&quot;id_visita&quot;: idv, **punto(esc.coords[idx])}).status_code == 200
+    a_las(17, 0)
+    r = obs(c.post(&quot;/api/promotor/jornada/finalizar&quot;, json=punto(esc.coords[1])))
+    assert r.status_code == 200 and r.get_json()[&quot;jornada&quot;][&quot;cierre_forzado&quot;] is False
+    h = c.get(&quot;/api/promotor/historial?fecha=2026-11-04&quot;).get_json()[&quot;resumen&quot;]
+    assert h[&quot;tiendas_visitadas&quot;] == 2 and h[&quot;fotos&quot;] == 8 and h[&quot;minutos_en_tienda&quot;] == 180
+</code></pre>
+<p><strong>Antes de corregir (F03)</strong> · registro original del fallo</p>
+<p><img alt="CP-03 antes: salida original del fallo F03" src="evidencias/CP-03_antes.png" /></p>
+<p><em>CP-03 antes: salida original del fallo F03</em> — <code>docs/evidencias/CP-03_antes.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de un registro de texto original (no es captura de pantalla)</p>
+<ul>
+<li><strong>Causa:</strong> La prueba registraba el primer check-in a las 08:00, antes del inicio de jornada (08:05). El servidor lo rechazó con 400 "La hora del registro es anterior al inicio de tu jornada", que es el comportamiento correcto.</li>
+<li><strong>Archivo corregido:</strong> <code>backend/tests/test_jornada.py</code></li>
+<li><strong>Fragmento antes:</strong></li>
+</ul>
+<pre><code>for idx, h in ((0, 8), (1, 11)):
+    a_las(h, 0)
+</code></pre>
+<ul>
+<li><strong>Fragmento después:</strong></li>
+</ul>
+<pre><code>for idx, h in ((0, 8), (1, 11)):
+    a_las(h, 10)
+</code></pre>
+<ul>
+<li><strong>Por qué ahora pasa:</strong> Con horas coherentes (check-in 08:10, después del inicio) el flujo completo llega hasta el cierre sin forzar.</li>
+</ul>
+<p><strong>Después de corregir</strong> · el mismo caso, repetido en SQL Server</p>
+<p><img alt="CP-03 después: misma prueba en SQL Server" src="evidencias/CP-03_despues.png" /></p>
+<p><em>CP-03 después: misma prueba en SQL Server</em> — <code>docs/evidencias/CP-03_despues.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-04-mapa-y-alcance-del-supervisor">CP-04 · Mapa y alcance del supervisor</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_supervision_reportes.py::test_S01_mapa_y_alcance_supervisor</code> (S01 · Mapa con última ubicación y estados separados, limitado al ámbito)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-10 Mapa en tiempo real; RF-02; estados de cuenta, jornada, visita y conexión</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td>Fallo <strong>F04</strong> · Error en el diseño de la prueba.</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 en tienda (visita abierta); P2 sin jornada; P3 pertenece a S2</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>S1 consulta /api/supervision/mapa; admin consulta el mismo</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_supervision_reportes.py::test_S01_mapa_y_alcance_supervisor -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>S1 ve P1 y P2 (no P3), P1 "En tienda" con ubicación reciente; admin ve a los 3</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 14:57:00): <strong>1 passed in 14.98s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 200 · <br>Detalle original (ejecución con SQLite): HTTP 200 ·</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa después de corregir (antes: fallida)</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code>; el fallo original ocurrió en Entorno de desarrollo (Linux · Python 3.13 · <strong>SQLite</strong> de pruebas)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_S01_mapa_y_alcance_supervisor(app, esc, obs):
+    &quot;&quot;&quot;S01 · Mapa con última ubicación y estados separados, limitado al ámbito
+    RF: RF-10 Mapa en tiempo real; RF-02; estados de cuenta, jornada, visita y conexión
+    Tipo: válido / alcance
+    Pre: P1 en tienda (visita abierta); P2 sin jornada; P3 pertenece a S2
+    Entrada: S1 consulta /api/supervision/mapa; admin consulta el mismo
+    Esperado: S1 ve P1 y P2 (no P3), P1 &quot;En tienda&quot; con ubicación reciente; admin ve a los 3
+    &quot;&quot;&quot;
+    _jornada_con_visita(app, esc, cerrar=False)
+    r = obs(cliente(app, &quot;s1@test.mx&quot;).get(&quot;/api/supervision/mapa&quot;))
+    ps = {p[&quot;numero_empleado&quot;]: p for p in r.get_json()[&quot;promotores&quot;]}
+    assert set(ps) == {&quot;P1&quot;, &quot;P2&quot;}
+    p1 = ps[&quot;P1&quot;]
+    assert (p1[&quot;estado_cuenta&quot;], p1[&quot;estado_jornada&quot;], p1[&quot;estado_visita&quot;], p1[&quot;estado_conexion&quot;]) == \
+           (&quot;Activo&quot;, &quot;En jornada&quot;, &quot;En tienda&quot;, &quot;Reciente&quot;)
+    assert p1[&quot;ultima_ubicacion&quot;][&quot;fecha_hora&quot;].startswith(&quot;2026-11-04T08:05&quot;)
+    assert ps[&quot;P2&quot;][&quot;estado_jornada&quot;] == &quot;Sin jornada&quot;
+    admin = cliente(app, &quot;admin@test.mx&quot;).get(&quot;/api/supervision/mapa&quot;).get_json()
+    # Corrección F04: los datos base de la etapa 1 incluyen a &quot;Pedro
+    # Promotor&quot; (activo, sin número de empleado); el administrador también
+    # lo ve. Se verifica que vea a todos los promotores activos.
+    assert {p[&quot;nombre_completo&quot;] for p in admin[&quot;promotores&quot;]} == {
+        &quot;Marco Promotor&quot;, &quot;Julieta Promotora&quot;, &quot;Pablo Promotor&quot;, &quot;Pedro Promotor&quot;}
+</code></pre>
+<p><strong>Antes de corregir (F04)</strong> · registro original del fallo</p>
+<p><img alt="CP-04 antes: salida original del fallo F04" src="evidencias/CP-04_antes.png" /></p>
+<p><em>CP-04 antes: salida original del fallo F04</em> — <code>docs/evidencias/CP-04_antes.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de un registro de texto original (no es captura de pantalla)</p>
+<ul>
+<li><strong>Causa:</strong> Se esperaban 3 promotores para el administrador, pero la base de la etapa 1 incluye a "Pedro Promotor" (activo, sin número de empleado). El sistema devolvía correctamente 4.</li>
+<li><strong>Archivo corregido:</strong> <code>backend/tests/test_supervision_reportes.py</code></li>
+<li><strong>Fragmento antes:</strong></li>
+</ul>
+<pre><code>(no se conservó el fragmento; el registro original muestra la comparación con {'P1', 'P2', 'P3'})
+</code></pre>
+<ul>
+<li><strong>Fragmento después:</strong></li>
+</ul>
+<pre><code>assert {p[&quot;nombre_completo&quot;] for p in admin[&quot;promotores&quot;]} == { ...los 4 promotores activos... }
+</code></pre>
+<ul>
+<li><strong>Por qué ahora pasa:</strong> La prueba compara ahora los nombres de todos los promotores activos que existen en el escenario.</li>
+</ul>
+<p><strong>Después de corregir</strong> · el mismo caso, repetido en SQL Server</p>
+<p><img alt="CP-04 después: misma prueba en SQL Server" src="evidencias/CP-04_despues.png" /></p>
+<p><em>CP-04 después: misma prueba en SQL Server</em> — <code>docs/evidencias/CP-04_despues.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-05-ubicacion-reciente-y-desactualizada">CP-05 · Ubicación reciente y desactualizada</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_supervision_reportes.py::test_S02_ubicacion_desactualizada</code> (S02 · Diferenciar ubicación reciente de desactualizada)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-10; excepción del modelo de diseño (promotor sin señal se muestra como desconectado)</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td>Fallo <strong>F05</strong> · Error en el diseño de la prueba.</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 inició a las 08:05 y no envía ubicaciones; parámetro ubicacion_reciente_min = 20</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>S1 consulta el mapa a las 08:20 y a las 08:40</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_supervision_reportes.py::test_S02_ubicacion_desactualizada -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>08:20 "Reciente"; 08:40 "Desactualizada" y cuenta como desconectado</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 14:57:21): <strong>1 passed in 13.12s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 200 · <br>Detalle original (ejecución con SQLite): HTTP 200 ·</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa después de corregir (antes: fallida)</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code>; el fallo original ocurrió en Entorno de desarrollo (Linux · Python 3.13 · <strong>SQLite</strong> de pruebas)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_S02_ubicacion_desactualizada(app, esc, obs):
+    &quot;&quot;&quot;S02 · Diferenciar ubicación reciente de desactualizada
+    RF: RF-10; excepción del modelo de diseño (promotor sin señal se muestra como desconectado)
+    Tipo: válido
+    Pre: P1 inició a las 08:05 y no envía ubicaciones; parámetro ubicacion_reciente_min = 20
+    Entrada: S1 consulta el mapa a las 08:20 y a las 08:40
+    Esperado: 08:20 &quot;Reciente&quot;; 08:40 &quot;Desactualizada&quot; y cuenta como desconectado
+    &quot;&quot;&quot;
+    c = cliente(app, &quot;p1@test.mx&quot;)
+    c.post(&quot;/api/promotor/jornada/iniciar&quot;, json=punto(esc.coords[0]))
+    s1 = cliente(app, &quot;s1@test.mx&quot;)
+    a_las(8, 20)
+    # Corrección F05: la lista viene ordenada por nombre (Julieta antes que
+    # Marco); se busca a P1 por su número en lugar de tomar la posición 0.
+    p1 = [p for p in s1.get(&quot;/api/supervision/mapa&quot;).get_json()[&quot;promotores&quot;] if p[&quot;numero_empleado&quot;] == &quot;P1&quot;][0]
+    assert p1[&quot;estado_conexion&quot;] == &quot;Reciente&quot;
+    a_las(8, 40)
+    r = obs(s1.get(&quot;/api/supervision/mapa&quot;))
+    p1 = [p for p in r.get_json()[&quot;promotores&quot;] if p[&quot;numero_empleado&quot;] == &quot;P1&quot;][0]
+    assert p1[&quot;estado_conexion&quot;] == &quot;Desactualizada&quot; and r.get_json()[&quot;resumen&quot;][&quot;Desconectados&quot;] == 1
+</code></pre>
+<p><strong>Antes de corregir (F05)</strong> · registro original del fallo</p>
+<p><img alt="CP-05 antes: salida original del fallo F05" src="evidencias/CP-05_antes.png" /></p>
+<p><em>CP-05 antes: salida original del fallo F05</em> — <code>docs/evidencias/CP-05_antes.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de un registro de texto original (no es captura de pantalla)</p>
+<ul>
+<li><strong>Causa:</strong> La prueba tomaba el primer promotor de la lista suponiendo que era P1, pero la lista se ordena por nombre.</li>
+<li><strong>Archivo corregido:</strong> <code>backend/tests/test_supervision_reportes.py</code></li>
+<li><strong>Fragmento antes:</strong></li>
+</ul>
+<pre><code>(no se conservó el fragmento; la prueba tomaba el primer elemento de la lista)
+</code></pre>
+<ul>
+<li><strong>Fragmento después:</strong></li>
+</ul>
+<pre><code>p1 = [p for p in ...[&quot;promotores&quot;] if p[&quot;numero_empleado&quot;] == &quot;P1&quot;][0]
+assert p1[&quot;estado_conexion&quot;] == &quot;Reciente&quot;
+</code></pre>
+<ul>
+<li><strong>Por qué ahora pasa:</strong> El promotor se busca por su número de empleado, sin depender del orden.</li>
+</ul>
+<p><strong>Después de corregir</strong> · el mismo caso, repetido en SQL Server</p>
+<p><img alt="CP-05 después: misma prueba en SQL Server" src="evidencias/CP-05_despues.png" /></p>
+<p><em>CP-05 después: misma prueba en SQL Server</em> — <code>docs/evidencias/CP-05_despues.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-06-exportar-reporte-de-exhibicion-a-pdf">CP-06 · Exportar reporte de exhibición a PDF</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_supervision_reportes.py::test_REP02_pdf_y_permisos</code> (REP02 · Exportar reporte de exhibición a PDF con evidencias y permisos)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-16 Exportar reportes (PDF); entrevista P26 (imágenes de anaquel, precios y promociones)</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td>Fallo <strong>F06</strong> · <strong>Defecto real del sistema</strong> (error 500 al exportar el PDF si una foto estaba dañada).</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 con visita cerrada y 4 fotos (imágenes de prueba no decodificables)</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>S1 genera reporte Semanal de Exhibición y descarga el PDF; S2 intenta descargarlo; S1 pide reporte de P3</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_supervision_reportes.py::test_REP02_pdf_y_permisos -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>PDF válido (%PDF); S2 recibe 404; reporte de P3 → 404</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 14:57:39): <strong>1 passed, 1 warning in 12.96s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 201 · Reporte generado. · PDF: HTTP 200, 3345 bytes, tipo application/pdf<br>Detalle original (ejecución con SQLite): HTTP 201 · Reporte generado. · PDF: HTTP 200, 3303 bytes, tipo application/pdf</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa después de corregir (antes: fallida)</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code>; el fallo original ocurrió en Entorno de desarrollo (Linux · Python 3.13 · <strong>SQLite</strong> de pruebas)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_REP02_pdf_y_permisos(app, esc, obs):
+    &quot;&quot;&quot;REP02 · Exportar reporte de exhibición a PDF con evidencias y permisos
+    RF: RF-16 Exportar reportes (PDF); entrevista P26 (imágenes de anaquel, precios y promociones)
+    Tipo: válido / no autorizado
+    Pre: P1 con visita cerrada y 4 fotos (imágenes de prueba no decodificables)
+    Entrada: S1 genera reporte Semanal de Exhibición y descarga el PDF; S2 intenta descargarlo; S1 pide reporte de P3
+    Esperado: PDF válido (%PDF); S2 recibe 404; reporte de P3 → 404
+    &quot;&quot;&quot;
+    _jornada_con_visita(app, esc)
+    s1 = cliente(app, &quot;s1@test.mx&quot;)
+    r = s1.post(&quot;/api/reportes&quot;, json={&quot;tipo&quot;: &quot;Semanal&quot;, &quot;contenido&quot;: &quot;Exhibición&quot;, &quot;fecha&quot;: &quot;2026-11-04&quot;})
+    assert r.status_code == 201 and r.get_json()[&quot;metricas&quot;][&quot;desde&quot;] == &quot;2026-11-02&quot;
+    idr = r.get_json()[&quot;reporte&quot;][&quot;id_reporte&quot;]
+    pdf = s1.get(f&quot;/api/reportes/{idr}/pdf&quot;)
+    obs(r, extra=f&quot;PDF: HTTP {pdf.status_code}, {len(pdf.data)} bytes, tipo {pdf.mimetype}&quot;)
+    assert pdf.status_code == 200 and pdf.data[:4] == b&quot;%PDF&quot; and pdf.mimetype == &quot;application/pdf&quot;
+    assert cliente(app, &quot;s2@test.mx&quot;).get(f&quot;/api/reportes/{idr}/pdf&quot;).status_code == 404
+    assert s1.post(&quot;/api/reportes&quot;, json={&quot;tipo&quot;: &quot;Diario&quot;, &quot;fecha&quot;: &quot;2026-11-04&quot;,
+                                          &quot;id_promotor&quot;: esc.ids.p3}).status_code == 404
+</code></pre>
+<p><strong>Antes de corregir (F06)</strong> · registro original del fallo</p>
+<p><img alt="CP-06 antes: salida original del fallo F06" src="evidencias/CP-06_antes.png" /></p>
+<p><em>CP-06 antes: salida original del fallo F06</em> — <code>docs/evidencias/CP-06_antes.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de un registro de texto original (no es captura de pantalla)</p>
+<ul>
+<li><strong>Causa:</strong> reportlab abre las imágenes al construir el documento; una sola foto truncada lanzaba <code>OSError: Truncated File Read</code> y el PDF completo fallaba.</li>
+<li><strong>Archivo corregido:</strong> <code>backend/app/servicios/reportes.py</code></li>
+<li><strong>Fragmento antes:</strong></li>
+</ul>
+<pre><code>Image(ruta, width=ancho, height=alto, kind=&quot;proportional&quot;)   # sin verificar el archivo
+</code></pre>
+<ul>
+<li><strong>Fragmento después:</strong></li>
+</ul>
+<pre><code>def _imagen_segura(ruta, Image, ancho, alto):
+    if not ruta or not os.path.isfile(ruta):
+        return None
+    try:
+        from PIL import Image as PILImage
+        with PILImage.open(ruta) as im:
+            im.load()
+        return Image(ruta, width=ancho, height=alto, kind=&quot;proportional&quot;)
+    except Exception:
+        return None
+</code></pre>
+<ul>
+<li><strong>Por qué ahora pasa:</strong> Cada imagen se valida con Pillow antes de incluirla; la dañada se omite y el resto del PDF se genera.</li>
+</ul>
+<p><strong>Después de corregir</strong> · el mismo caso, repetido en SQL Server</p>
+<p><img alt="CP-06 después: misma prueba en SQL Server" src="evidencias/CP-06_despues.png" /></p>
+<p><em>CP-06 después: misma prueba en SQL Server</em> — <code>docs/evidencias/CP-06_despues.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-07-sincronizacion-de-eventos-sin-conexion-angular">CP-07 · Sincronización de eventos sin conexión (Angular)</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td>E2E-OFF01 (manual en el navegador, registrada en texto)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RNF-08 / RNF-09 Funcionamiento y almacenamiento sin conexión; RF-03 Check-in; RF-05 Evidencias</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td>Fallo <strong>F07</strong> · <strong>Defecto real del sistema</strong> (la cola sin conexión dejaba de reintentar).</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>promotor.prueba con jornada abierta; sesión iniciada en el navegador de la laptop</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>Sin red simulada: check-in en Soriana San Juan Bosco y foto "Anaquel antes"; luego se restaura la red</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td>DevTools → Network → Offline; CHECK-IN y foto; volver a Online; esperar 6 s y revisar la interfaz, <code>/api/promotor/hoy</code> e IndexedDB</td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>Los 2 eventos se envían solos al volver la señal; el servidor los valida y guarda con origen "Sin conexión" y su hora de captura; 0 pendientes</td>
+</tr>
+<tr>
+<td>Resultado obtenido (antes)</td>
+<td>"2 pendiente(s) de sincronizar"; la visita de Soriana no llegó al servidor (null); 1 intento por evento, sin reintentos</td>
+</tr>
+<tr>
+<td>Resultado obtenido (después)</td>
+<td>0 pendientes; visita de Soriana "Abierta", origen "Sin conexión", foto válida con hora de captura y de recepción; sin duplicados</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa después de corregir (antes: fallida)</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · navegador integrado + Flask + <strong>SQL Server real</strong> <code>ScribeTracker</code> (02/11/2026 23:24-23:25). Verificación repetida hoy con el build de producción en desarrollo (SQLite)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código que se probó</strong> (<code>frontend/src/app/core/cola.service.ts</code>, método <code>sincronizar</code>)</p>
+<pre><code class="language-ts">sincronizar(): Promise&lt;void&gt; {
+  if (this.enCurso) return this.enCurso;
+  const ejecucion = (async () =&gt; { ... })();
+  this.enCurso = ejecucion;
+  void ejecucion.finally(() =&gt; { if (this.enCurso === ejecucion) this.enCurso = null; });
+  return ejecucion;
+}
+</code></pre>
+<p><strong>Antes de corregir (F07)</strong> · registro original</p>
+<p><img alt="CP-07 antes: registro original de E2E-OFF01" src="evidencias/CP-07_antes.png" /></p>
+<p><em>CP-07 antes: registro original de E2E-OFF01</em> — <code>docs/evidencias/CP-07_antes.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de un registro de texto original (no es captura de pantalla)</p>
+<ul>
+<li><strong>Causa:</strong> En <code>sincronizar()</code>, sin pendientes la función terminaba sin ningún <code>await</code> y su <code>finally</code> ponía <code>enCurso = null</code> antes de que se guardara la promesa. <code>enCurso</code> quedaba ocupado para siempre y ninguna sincronización posterior se ejecutaba.</li>
+<li><strong>Archivo corregido:</strong> <code>frontend/src/app/core/cola.service.ts</code></li>
+<li><strong>Fragmento antes:</strong></li>
+</ul>
+<pre><code class="language-ts">async sincronizar() {
+  if (this.enCurso) return this.enCurso;
+  this.enCurso = (async () =&gt; {
+    try { ... } finally { this.enCurso = null; }
+  })();
+  return this.enCurso;
+}
+</code></pre>
+<ul>
+<li><strong>Fragmento después:</strong></li>
+</ul>
+<pre><code class="language-ts">sincronizar(): Promise&lt;void&gt; {
+  if (this.enCurso) return this.enCurso;
+  const ejecucion = (async () =&gt; { ... })();
+  this.enCurso = ejecucion;
+  void ejecucion.finally(() =&gt; { if (this.enCurso === ejecucion) this.enCurso = null; });
+  return ejecucion;
+}
+</code></pre>
+<ul>
+<li><strong>Por qué ahora pasa:</strong> <code>enCurso</code> solo se limpia cuando termina la misma ejecución que se guardó, así que cada evento "online" o el intervalo de 30 s vuelven a sincronizar.</li>
+</ul>
+<p><strong>Después de corregir</strong> · mismo caso en la laptop (registro) y repetido hoy (capturas)</p>
+<p><img alt="CP-07 después: registro original en la laptop con SQL Server" src="evidencias/CP-07_despues_registro.png" /></p>
+<p><em>CP-07 después: registro original en la laptop con SQL Server</em> — <code>docs/evidencias/CP-07_despues_registro.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de un registro de texto original (no es captura de pantalla)</p>
+<p><img alt="CP-07 después (repetido hoy): sin señal, check-in pendiente" src="evidencias/CP-07_despues_1_sin_conexion.png" /></p>
+<p><em>CP-07 después (repetido hoy): sin señal, check-in pendiente</em> — <code>docs/evidencias/CP-07_despues_1_sin_conexion.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<p><img alt="CP-07 después (repetido hoy): señal recuperada, sincronizado y validado" src="evidencias/CP-07_despues_2_sincronizado.png" /></p>
+<p><em>CP-07 después (repetido hoy): señal recuperada, sincronizado y validado</em> — <code>docs/evidencias/CP-07_despues_2_sincronizado.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-08-acceso-por-rol-matriz-de-permisos">CP-08 · Acceso por rol (matriz de permisos)</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_auth.py::test_matriz_de_permisos</code> (etapa 1, sin docstring; campos tomados del código)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-01 (3.6); RNF-16 Control de acceso por rol (comprobado en el servidor)</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Flujo válido y rechazos esperados</strong> (válido e inválido (9 combinaciones))</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>Un usuario Activo por rol: Promotor, Supervisor y Administrador</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>Cada rol inicia sesión y pide la pantalla inicial de cada uno de los 3 roles (/api/inicio/<rol>)</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_auth.py::test_matriz_de_permisos -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 200 solo en la pantalla de su propio rol; HTTP 403 en las otras 2 (6 de 9 combinaciones son rechazos esperados)</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 14:57:57): <strong>9 passed in 67.89s (0:01:07)</strong><br>Ejecución conjunta en SQL Server (9 passed): (la prueba no registra detalle HTTP; solo aserciones)</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">@pytest.mark.parametrize(&quot;rol_usuario&quot;, list(ACCESOS))
+@pytest.mark.parametrize(&quot;rol_ruta&quot;, list(RUTAS))
+def test_matriz_de_permisos(client, rol_usuario, rol_ruta):
+    login(client, ACCESOS[rol_usuario])
+    esperado = 200 if rol_usuario == rol_ruta else 403
+    assert client.get(RUTAS[rol_ruta]).status_code == esperado
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-08: salida real en SQL Server" src="evidencias/CP-08_resultado.png" /></p>
+<p><em>CP-08: salida real en SQL Server</em> — <code>docs/evidencias/CP-08_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-09-rechazo-de-cuenta-inactiva">CP-09 · Rechazo de cuenta inactiva</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_auth.py::test_usuario_inactivo_no_entra</code> (etapa 1, sin docstring; campos tomados del código)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-01 (3.6) Inicio de sesión: estatus Activo; RF-06 Baja lógica</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (inválido)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>Usuario inactivo@test.mx con estatus Inactivo y contraseña correcta</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>POST /api/auth/login con la contraseña correcta</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_auth.py::test_usuario_inactivo_no_entra -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 403 con mensaje de cuenta inactiva; no se crea sesión (/api/auth/me responde 401)</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 14:59:10): <strong>1 passed in 10.62s</strong><br>Ejecución conjunta en SQL Server (1 passed): (la prueba no registra detalle HTTP; solo aserciones)</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_usuario_inactivo_no_entra(client):
+    r = login(client, &quot;inactivo@test.mx&quot;)
+    assert r.status_code == 403
+    assert &quot;inactiva&quot; in r.get_json()[&quot;error&quot;]
+    assert client.get(&quot;/api/auth/me&quot;).status_code == 401
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-09: salida real en SQL Server" src="evidencias/CP-09_resultado.png" /></p>
+<p><em>CP-09: salida real en SQL Server</em> — <code>docs/evidencias/CP-09_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-02 · Login de cuenta Inactiva: el servidor rechaza el acceso (CP-09) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-02_cuenta_inactiva.png" /></p>
+<p><em>UI-02 · Login de cuenta Inactiva: el servidor rechaza el acceso (CP-09) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-02_cuenta_inactiva.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-02 · Login de cuenta Inactiva: el servidor rechaza el acceso (CP-09) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-02_cuenta_inactiva.png" /></p>
+<p><em>UI-02 · Login de cuenta Inactiva: el servidor rechaza el acceso (CP-09) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-02_cuenta_inactiva.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-10-peticion-manipulada-solo-el-administrador-registra-usuarios">CP-10 · Petición manipulada: solo el administrador registra usuarios</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_usuarios.py::test_U05_solo_admin_gestiona</code> (U05 · Supervisor y promotor no pueden registrar usuarios)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-03 (3.6); RNF-16 control de acceso por rol</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (no autorizado)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>sesiones de Supervisor S1 y Promotor P1</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>POST /api/usuarios con datos válidos (petición manipulada)</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_usuarios.py::test_U05_solo_admin_gestiona -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 403 en ambos casos</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 14:59:27): <strong>1 passed in 11.02s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 403 · No tienes permiso para esta sección.<br>Detalle original (ejecución con SQLite): HTTP 403 · No tienes permiso para esta sección.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_U05_solo_admin_gestiona(app, esc, obs):
+    &quot;&quot;&quot;U05 · Supervisor y promotor no pueden registrar usuarios
+    RF: RF-03 (3.6); RNF-16 control de acceso por rol
+    Tipo: no autorizado
+    Pre: sesiones de Supervisor S1 y Promotor P1
+    Entrada: POST /api/usuarios con datos válidos (petición manipulada)
+    Esperado: HTTP 403 en ambos casos
+    &quot;&quot;&quot;
+    for correo in (&quot;s1@test.mx&quot;, &quot;p1@test.mx&quot;):
+        r = obs(cliente(app, correo).post(&quot;/api/usuarios&quot;, json={**NUEVO, &quot;id_supervisor&quot;: esc.ids.s1}))
+        assert r.status_code == 403
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-10: salida real en SQL Server" src="evidencias/CP-10_resultado.png" /></p>
+<p><em>CP-10: salida real en SQL Server</em> — <code>docs/evidencias/CP-10_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-27_permisos_promotor.png" /></p>
+<p><em>UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-27_permisos_promotor.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-27_permisos_promotor.png" /></p>
+<p><em>UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-27_permisos_promotor.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-11-campos-obligatorios-en-el-alta-de-usuarios">CP-11 · Campos obligatorios en el alta de usuarios</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_usuarios.py::test_U02_campos_obligatorios</code> (U02 · Alta rechazada por campos obligatorios vacíos)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-03 (3.6); RF-23 Mensajes de error</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (inválido)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>sesión de Administrador</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>formulario vacío</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_usuarios.py::test_U02_campos_obligatorios -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 400 con mensaje por campo (nombre, correo, teléfono, número de empleado, rol)</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 14:59:43): <strong>1 passed in 11.20s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 400 · Revisa los campos marcados. · {'campos': {'correo_electronico': 'Escribe un correo electrónico válido.', 'nombre_completo': 'El nombre completo es obligatorio.', 'numero_empleado': 'El número de empleado es obligatorio (letras, números o guiones).', 'rol': 'Selecciona un rol válido.', 'telefono': 'El teléfono es obligatorio (10 a 15 dígitos).'}}<br>Detalle original (ejecución con SQLite): HTTP 400 · Revisa los campos marcados. · {'campos': {'correo_electronico': 'Escribe un correo electrónico válido.', 'nombre_completo': 'El nombre completo es obligatorio.', 'numero_empleado': 'El número de empleado es obligatorio (letras, números o guiones).', 'rol': 'Selecciona un rol válido.', 'telefono': 'El teléfono es obligatorio (10 a 15 dígitos).'}}</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_U02_campos_obligatorios(app, esc, obs):
+    &quot;&quot;&quot;U02 · Alta rechazada por campos obligatorios vacíos
+    RF: RF-03 (3.6); RF-23 Mensajes de error
+    Tipo: inválido
+    Pre: sesión de Administrador
+    Entrada: formulario vacío
+    Esperado: HTTP 400 con mensaje por campo (nombre, correo, teléfono, número de empleado, rol)
+    &quot;&quot;&quot;
+    c = cliente(app, &quot;admin@test.mx&quot;)
+    r = obs(c.post(&quot;/api/usuarios&quot;, json={}))
+    assert r.status_code == 400
+    assert set(r.get_json()[&quot;campos&quot;]) &gt;= {&quot;nombre_completo&quot;, &quot;correo_electronico&quot;, &quot;telefono&quot;, &quot;numero_empleado&quot;, &quot;rol&quot;}
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-11: salida real en SQL Server" src="evidencias/CP-11_resultado.png" /></p>
+<p><em>CP-11: salida real en SQL Server</em> — <code>docs/evidencias/CP-11_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-22 · Alta de usuario vacía: mensajes por campo obligatorio (CP-11) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-22_alta_campos_obligatorios.png" /></p>
+<p><em>UI-22 · Alta de usuario vacía: mensajes por campo obligatorio (CP-11) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-22_alta_campos_obligatorios.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-22 · Alta de usuario vacía: mensajes por campo obligatorio (CP-11) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-22_alta_campos_obligatorios.png" /></p>
+<p><em>UI-22 · Alta de usuario vacía: mensajes por campo obligatorio (CP-11) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-22_alta_campos_obligatorios.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-12-correo-y-numero-de-empleado-duplicados">CP-12 · Correo y número de empleado duplicados</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_usuarios.py::test_U03_duplicados</code> (U03 · Correo y número de empleado duplicados)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-03 (3.6) número de empleado único; correo UNIQUE (diccionario)</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (inválido)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>existe p1@test.mx con número P1</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>nuevo usuario con correo p1@test.mx y número P1</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_usuarios.py::test_U03_duplicados -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 400 indicando ambos duplicados; no se crea registro</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:00:01): <strong>1 passed in 11.58s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 400 · Revisa los campos marcados. · {'campos': {'correo_electronico': 'Ya existe un usuario con ese correo.', 'numero_empleado': 'Ya existe un usuario con ese número de empleado.'}}<br>Detalle original (ejecución con SQLite): HTTP 400 · Revisa los campos marcados. · {'campos': {'correo_electronico': 'Ya existe un usuario con ese correo.', 'numero_empleado': 'Ya existe un usuario con ese número de empleado.'}}</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_U03_duplicados(app, esc, obs):
+    &quot;&quot;&quot;U03 · Correo y número de empleado duplicados
+    RF: RF-03 (3.6) número de empleado único; correo UNIQUE (diccionario)
+    Tipo: inválido
+    Pre: existe p1@test.mx con número P1
+    Entrada: nuevo usuario con correo p1@test.mx y número P1
+    Esperado: HTTP 400 indicando ambos duplicados; no se crea registro
+    &quot;&quot;&quot;
+    c = cliente(app, &quot;admin@test.mx&quot;)
+    r = obs(c.post(&quot;/api/usuarios&quot;, json={**NUEVO, &quot;correo_electronico&quot;: &quot;P1@test.mx&quot;, &quot;numero_empleado&quot;: &quot;p1&quot;,
+                                          &quot;id_supervisor&quot;: esc.ids.s1}))
+    assert r.status_code == 400
+    assert &quot;correo_electronico&quot; in r.get_json()[&quot;campos&quot;] and &quot;numero_empleado&quot; in r.get_json()[&quot;campos&quot;]
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-12: salida real en SQL Server" src="evidencias/CP-12_resultado.png" /></p>
+<p><em>CP-12: salida real en SQL Server</em> — <code>docs/evidencias/CP-12_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-23 · Correo ya registrado: el servidor rechaza el duplicado (CP-12) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-23_alta_correo_duplicado.png" /></p>
+<p><em>UI-23 · Correo ya registrado: el servidor rechaza el duplicado (CP-12) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-23_alta_correo_duplicado.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-23 · Correo ya registrado: el servidor rechaza el duplicado (CP-12) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-23_alta_correo_duplicado.png" /></p>
+<p><em>UI-23 · Correo ya registrado: el servidor rechaza el duplicado (CP-12) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-23_alta_correo_duplicado.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-13-promotor-sin-acceso-a-registros-ajenos">CP-13 · Promotor sin acceso a registros ajenos</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_A01_promotor_no_accede_a_registros_ajenos</code> (A01 · Promotor sin acceso a registros ajenos)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RNF-16 Seguridad de la información</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (no autorizado (petición manipulada))</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 con visita y foto; P3 es otro promotor</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>P3 consulta la visita de P1, su foto, usa una asignación de P1 y llama a la supervisión</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_A01_promotor_no_accede_a_registros_ajenos -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>404 en visita, foto y asignación; 403 en endpoints de supervisión</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:00:17): <strong>1 passed in 13.83s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 404 · Evidencia no encontrada.<br>Detalle original (ejecución con SQLite): HTTP 404 · Evidencia no encontrada.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_A01_promotor_no_accede_a_registros_ajenos(app, esc, obs):
+    &quot;&quot;&quot;A01 · Promotor sin acceso a registros ajenos
+    RF: RNF-16 Seguridad de la información
+    Tipo: no autorizado (petición manipulada)
+    Pre: P1 con visita y foto; P3 es otro promotor
+    Entrada: P3 consulta la visita de P1, su foto, usa una asignación de P1 y llama a la supervisión
+    Esperado: 404 en visita, foto y asignación; 403 en endpoints de supervisión
+    &quot;&quot;&quot;
+    c1 = _p1(app)
+    _iniciar(c1, esc)
+    asign = _asignaciones(c1)[1][&quot;id_asignacion&quot;]
+    idv = _checkin(c1, esc).get_json()[&quot;visita&quot;][&quot;id_visita&quot;]
+    url = subir_foto(c1, idv, &quot;Precios&quot;, punto(esc.coords[0])).get_json()[&quot;evidencia&quot;][&quot;url&quot;]
+    c3 = cliente(app, &quot;p3@test.mx&quot;)
+    assert c3.get(f&quot;/api/promotor/visitas/{idv}&quot;).status_code == 404
+    r = obs(c3.get(url))
+    assert r.status_code == 404
+    c3.post(&quot;/api/promotor/jornada/iniciar&quot;, json=punto(esc.coords[2]))
+    assert c3.post(&quot;/api/promotor/visitas/checkin&quot;, json={&quot;id_asignacion&quot;: asign, **punto(esc.coords[1])}).status_code == 404
+    assert c3.get(&quot;/api/supervision/mapa&quot;).status_code == 403
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-13: salida real en SQL Server" src="evidencias/CP-13_resultado.png" /></p>
+<p><em>CP-13: salida real en SQL Server</em> — <code>docs/evidencias/CP-13_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-27_permisos_promotor.png" /></p>
+<p><em>UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-27_permisos_promotor.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-27_permisos_promotor.png" /></p>
+<p><em>UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-27_permisos_promotor.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-14-supervisor-limitado-a-su-ambito">CP-14 · Supervisor limitado a su ámbito</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_tiendas_rutas.py::test_R03_supervisor_fuera_de_alcance</code> (R03 · Supervisor no puede asignar ni consultar promotores ajenos)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-09; RNF-16 (supervisor limitado a su ámbito)</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (no autorizado (petición manipulada))</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P3 pertenece a S2</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>S1 envía PUT /api/asignaciones/dia y GET /api/asignaciones para P3</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_tiendas_rutas.py::test_R03_supervisor_fuera_de_alcance -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 404 en ambos; no se crean asignaciones</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:00:37): <strong>1 passed in 11.08s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 404 · Promotor no encontrado o fuera de tu alcance.<br>Detalle original (ejecución con SQLite): HTTP 404 · Promotor no encontrado o fuera de tu alcance.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_R03_supervisor_fuera_de_alcance(app, esc, obs):
+    &quot;&quot;&quot;R03 · Supervisor no puede asignar ni consultar promotores ajenos
+    RF: RF-09; RNF-16 (supervisor limitado a su ámbito)
+    Tipo: no autorizado (petición manipulada)
+    Pre: P3 pertenece a S2
+    Entrada: S1 envía PUT /api/asignaciones/dia y GET /api/asignaciones para P3
+    Esperado: HTTP 404 en ambos; no se crean asignaciones
+    &quot;&quot;&quot;
+    c = cliente(app, &quot;s1@test.mx&quot;)
+    r = obs(c.put(&quot;/api/asignaciones/dia&quot;, json={&quot;id_promotor&quot;: esc.ids.p3,
+                                                 &quot;fecha&quot;: (HOY + timedelta(days=1)).isoformat(), &quot;tiendas&quot;: [esc.ids.t[0]]}))
+    assert r.status_code == 404
+    assert c.get(f&quot;/api/asignaciones?id_promotor={esc.ids.p3}&amp;fecha={HOY}&quot;).status_code == 404
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-14: salida real en SQL Server" src="evidencias/CP-14_resultado.png" /></p>
+<p><em>CP-14: salida real en SQL Server</em> — <code>docs/evidencias/CP-14_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-15-inicio-de-jornada-en-la-primera-tienda">CP-15 · Inicio de jornada en la primera tienda</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_J01_inicio_en_primera_tienda</code> (J01 · Iniciar jornada dentro de la geocerca de la primera tienda)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-01 Inicio de jornada; reglas C1 y C2</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Flujo válido</strong> (válido)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 con Walmart (orden 1) y Soriana (orden 2) asignadas hoy; 08:05</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>ubicación a 10 m de Walmart Torres Landa</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_J01_inicio_en_primera_tienda -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 201; jornada Abierta; rastreo activo; primer punto de ubicación registrado</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:00:54): <strong>1 passed in 12.35s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 201 · Jornada iniciada. El seguimiento de ubicación está activo.<br>Detalle original (ejecución con SQLite): HTTP 201 · Jornada iniciada. El seguimiento de ubicación está activo.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_J01_inicio_en_primera_tienda(app, esc, obs):
+    &quot;&quot;&quot;J01 · Iniciar jornada dentro de la geocerca de la primera tienda
+    RF: RF-01 Inicio de jornada; reglas C1 y C2
+    Tipo: válido
+    Pre: P1 con Walmart (orden 1) y Soriana (orden 2) asignadas hoy; 08:05
+    Entrada: ubicación a 10 m de Walmart Torres Landa
+    Esperado: HTTP 201; jornada Abierta; rastreo activo; primer punto de ubicación registrado
+    &quot;&quot;&quot;
+    c = _p1(app)
+    r = obs(_iniciar(c, esc))
+    assert r.status_code == 201 and r.get_json()[&quot;jornada&quot;][&quot;estado&quot;] == &quot;Abierta&quot;
+    hoy = c.get(&quot;/api/promotor/hoy&quot;).get_json()
+    assert hoy[&quot;rastreo_activo&quot;] is True and hoy[&quot;estado&quot;][&quot;estado_jornada&quot;] == &quot;En jornada&quot;
+    with app.app_context():
+        assert db.session.execute(db.select(db.func.count()).select_from(Ubicacion)).scalar_one() == 1
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-15: salida real en SQL Server" src="evidencias/CP-15_resultado.png" /></p>
+<p><em>CP-15: salida real en SQL Server</em> — <code>docs/evidencias/CP-15_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-05 · A 20 m de Walmart (tienda 1): jornada iniciada, sin visita todavía (CP-15, CP-18) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-05_jornada_iniciada.png" /></p>
+<p><em>UI-05 · A 20 m de Walmart (tienda 1): jornada iniciada, sin visita todavía (CP-15, CP-18) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-05_jornada_iniciada.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-05 · A 20 m de Walmart (tienda 1): jornada iniciada, sin visita todavía (CP-15, CP-18) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-05_jornada_iniciada.png" /></p>
+<p><em>UI-05 · A 20 m de Walmart (tienda 1): jornada iniciada, sin visita todavía (CP-15, CP-18) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-05_jornada_iniciada.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-16-rechazo-de-inicio-fuera-de-la-primera-tienda">CP-16 · Rechazo de inicio fuera de la primera tienda</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_J02_inicio_fuera_de_primera_tienda</code> (J02 · Iniciar jornada fuera de la geocerca o en otra tienda asignada)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-01; regla C2</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (inválido)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 sin jornada</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>(a) a 120 m de Walmart; (b) dentro de Soriana, que es la tienda 2</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_J02_inicio_fuera_de_primera_tienda -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 409 en ambos casos con la distancia; no se crea jornada</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:01:12): <strong>1 passed in 11.84s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 409 · Para iniciar tu jornada debes estar en tu primera tienda: Walmart Torres Landa. Estás a 119 m y el radio permitido es de 50 m. · {'distancia_m': 119.9}<br>Detalle original (ejecución con SQLite): HTTP 409 · Para iniciar tu jornada debes estar en tu primera tienda: Walmart Torres Landa. Estás a 119 m y el radio permitido es de 50 m. · {'distancia_m': 119.9}</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_J02_inicio_fuera_de_primera_tienda(app, esc, obs):
+    &quot;&quot;&quot;J02 · Iniciar jornada fuera de la geocerca o en otra tienda asignada
+    RF: RF-01; regla C2
+    Tipo: inválido
+    Pre: P1 sin jornada
+    Entrada: (a) a 120 m de Walmart; (b) dentro de Soriana, que es la tienda 2
+    Esperado: HTTP 409 en ambos casos con la distancia; no se crea jornada
+    &quot;&quot;&quot;
+    c = _p1(app)
+    r = obs(_iniciar(c, esc, metros=120))
+    assert r.status_code == 409 and r.get_json()[&quot;distancia_m&quot;] &gt; 50
+    assert c.post(&quot;/api/promotor/jornada/iniciar&quot;, json=punto(esc.coords[1], 5)).status_code == 409
+    with app.app_context():
+        assert db.session.execute(db.select(db.func.count()).select_from(Jornada)).scalar_one() == 0
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-16: salida real en SQL Server" src="evidencias/CP-16_resultado.png" /></p>
+<p><em>CP-16: salida real en SQL Server</em> — <code>docs/evidencias/CP-16_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-04 · Ubicación en Soriana (tienda 2): inicio de jornada rechazado (CP-16) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-04_inicio_fuera_primera_tienda.png" /></p>
+<p><em>UI-04 · Ubicación en Soriana (tienda 2): inicio de jornada rechazado (CP-16) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-04_inicio_fuera_primera_tienda.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-04 · Ubicación en Soriana (tienda 2): inicio de jornada rechazado (CP-16) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-04_inicio_fuera_primera_tienda.png" /></p>
+<p><em>UI-04 · Ubicación en Soriana (tienda 2): inicio de jornada rechazado (CP-16) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-04_inicio_fuera_primera_tienda.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-17-una-sola-jornada-por-fecha">CP-17 · Una sola jornada por fecha</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_J03_jornada_unica_por_fecha</code> (J03 · Una sola jornada por fecha operativa)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-01; regla C1</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (inválido (duplicado))</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 ya inició y finalizó su jornada hoy (cierre forzado con motivo)</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>segundo intento de iniciar jornada el mismo día</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_J03_jornada_unica_por_fecha -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 409 "Ya registraste una jornada para este día"</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:01:30): <strong>1 passed in 14.68s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 409 · Ya registraste una jornada para este día. Solo se permite una jornada por fecha.<br>Detalle original (ejecución con SQLite): HTTP 409 · Ya registraste una jornada para este día. Solo se permite una jornada por fecha.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_J03_jornada_unica_por_fecha(app, esc, obs):
+    &quot;&quot;&quot;J03 · Una sola jornada por fecha operativa
+    RF: RF-01; regla C1
+    Tipo: inválido (duplicado)
+    Pre: P1 ya inició y finalizó su jornada hoy (cierre forzado con motivo)
+    Entrada: segundo intento de iniciar jornada el mismo día
+    Esperado: HTTP 409 &quot;Ya registraste una jornada para este día&quot;
+    &quot;&quot;&quot;
+    c = _p1(app)
+    _iniciar(c, esc)
+    c.post(&quot;/api/promotor/jornada/finalizar&quot;, json={**punto(esc.coords[0]), &quot;forzar&quot;: True,
+                                                   &quot;motivo&quot;: &quot;Prueba de jornada única&quot;})
+    r = obs(_iniciar(c, esc))
+    assert r.status_code == 409 and &quot;una jornada&quot; in r.get_json()[&quot;error&quot;]
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-17: salida real en SQL Server" src="evidencias/CP-17_resultado.png" /></p>
+<p><em>CP-17: salida real en SQL Server</em> — <code>docs/evidencias/CP-17_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-18-check-in-separado-del-inicio-de-jornada">CP-18 · Check-in separado del inicio de jornada</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_V01_checkin_independiente_del_inicio</code> (V01 · Check-in separado del inicio de jornada)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-03 Check-in; reglas C3 y C4</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Flujo válido</strong> (válido)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 con jornada iniciada a las 08:05 y sin visitas</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>08:10 check-in en Walmart a 15 m</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_V01_checkin_independiente_del_inicio -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>iniciar jornada no crea visita; el check-in crea visita Abierta con su propia hora y ubicación</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:01:50): <strong>1 passed in 12.76s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 201 · Check-in registrado correctamente en Walmart Torres Landa.<br>Detalle original (ejecución con SQLite): HTTP 201 · Check-in registrado correctamente en Walmart Torres Landa.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_V01_checkin_independiente_del_inicio(app, esc, obs):
+    &quot;&quot;&quot;V01 · Check-in separado del inicio de jornada
+    RF: RF-03 Check-in; reglas C3 y C4
+    Tipo: válido
+    Pre: P1 con jornada iniciada a las 08:05 y sin visitas
+    Entrada: 08:10 check-in en Walmart a 15 m
+    Esperado: iniciar jornada no crea visita; el check-in crea visita Abierta con su propia hora y ubicación
+    &quot;&quot;&quot;
+    c = _p1(app)
+    _iniciar(c, esc)
+    with app.app_context():
+        assert db.session.execute(db.select(db.func.count()).select_from(Visita)).scalar_one() == 0
+    a_las(8, 10)
+    r = obs(_checkin(c, esc, metros=15))
+    v = r.get_json()[&quot;visita&quot;]
+    assert r.status_code == 201 and v[&quot;estado&quot;] == &quot;Abierta&quot;
+    assert v[&quot;checkin&quot;].endswith(&quot;08:10:00&quot;) and 14 &lt; v[&quot;distancia_checkin_m&quot;] &lt; 16
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-18: salida real en SQL Server" src="evidencias/CP-18_resultado.png" /></p>
+<p><em>CP-18: salida real en SQL Server</em> — <code>docs/evidencias/CP-18_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-06 · Check-in independiente en Walmart Torres Landa (CP-18) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-06_checkin.png" /></p>
+<p><em>UI-06 · Check-in independiente en Walmart Torres Landa (CP-18) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-06_checkin.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-06 · Check-in independiente en Walmart Torres Landa (CP-18) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-06_checkin.png" /></p>
+<p><em>UI-06 · Check-in independiente en Walmart Torres Landa (CP-18) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-06_checkin.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-19-dos-visitas-abiertas-y-visita-duplicada">CP-19 · Dos visitas abiertas y visita duplicada</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_V03_dos_visitas_abiertas</code> (V03 · Impedir dos visitas abiertas simultáneas y visita duplicada)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-03; regla C9</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (inválido (estado incompatible))</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 con visita abierta en Walmart</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>check-in en Soriana (dentro de su geocerca) y repetir check-in en Walmart</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_V03_dos_visitas_abiertas -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 409 en ambos; solo existe una visita</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:02:09): <strong>1 passed in 13.21s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 409 · Ya tienes una visita abierta en Walmart. Registra su check-out antes de entrar a otra tienda.<br>Detalle original (ejecución con SQLite): HTTP 409 · Ya tienes una visita abierta en Walmart. Registra su check-out antes de entrar a otra tienda.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_V03_dos_visitas_abiertas(app, esc, obs):
+    &quot;&quot;&quot;V03 · Impedir dos visitas abiertas simultáneas y visita duplicada
+    RF: RF-03; regla C9
+    Tipo: inválido (estado incompatible)
+    Pre: P1 con visita abierta en Walmart
+    Entrada: check-in en Soriana (dentro de su geocerca) y repetir check-in en Walmart
+    Esperado: HTTP 409 en ambos; solo existe una visita
+    &quot;&quot;&quot;
+    c = _p1(app)
+    _iniciar(c, esc)
+    _checkin(c, esc)
+    r = obs(_checkin(c, esc, idx=1, metros=5))
+    assert r.status_code == 409 and &quot;visita abierta&quot; in r.get_json()[&quot;error&quot;]
+    assert _checkin(c, esc).status_code == 409
+    with app.app_context():
+        assert db.session.execute(db.select(db.func.count()).select_from(Visita)).scalar_one() == 1
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-19: salida real en SQL Server" src="evidencias/CP-19_resultado.png" /></p>
+<p><em>CP-19: salida real en SQL Server</em> — <code>docs/evidencias/CP-19_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-20-foto-fuera-de-geocerca-no-cuenta">CP-20 · Foto fuera de geocerca no cuenta</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_E02_foto_fuera_de_geocerca_no_cuenta</code> (E02 · Fotografía fuera de la geocerca se guarda pero no cuenta)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-12 Validación automática; regla D (fuera de geocerca no completa la visita)</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (inválido (genera alerta))</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>visita abierta en Walmart</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>foto "Precios" tomada a 300 m</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_E02_foto_fuera_de_geocerca_no_cuenta -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 422; estatus "Fuera de geocerca"; incidencia crítica; la categoría Precios sigue faltando</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:02:27): <strong>1 passed in 12.95s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 422 · La foto se guardó pero NO cuenta para la visita: Tomada a 299 m de la tienda (radio 50 m).<br>Detalle original (ejecución con SQLite): HTTP 422 · La foto se guardó pero NO cuenta para la visita: Tomada a 299 m de la tienda (radio 50 m).</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_E02_foto_fuera_de_geocerca_no_cuenta(app, esc, obs):
+    &quot;&quot;&quot;E02 · Fotografía fuera de la geocerca se guarda pero no cuenta
+    RF: RF-12 Validación automática; regla D (fuera de geocerca no completa la visita)
+    Tipo: inválido (genera alerta)
+    Pre: visita abierta en Walmart
+    Entrada: foto &quot;Precios&quot; tomada a 300 m
+    Esperado: HTTP 422; estatus &quot;Fuera de geocerca&quot;; incidencia crítica; la categoría Precios sigue faltando
+    &quot;&quot;&quot;
+    c = _p1(app)
+    _iniciar(c, esc)
+    idv = _checkin(c, esc).get_json()[&quot;visita&quot;][&quot;id_visita&quot;]
+    r = obs(subir_foto(c, idv, &quot;Precios&quot;, punto(esc.coords[0], 300)))
+    assert r.status_code == 422 and r.get_json()[&quot;evidencia&quot;][&quot;estatus_validacion&quot;] == &quot;Fuera de geocerca&quot;
+    assert &quot;Precios&quot; in r.get_json()[&quot;visita&quot;][&quot;categorias_faltantes&quot;]
+    with app.app_context():
+        inc = db.session.execute(db.select(Incidencia).where(Incidencia.tipo == &quot;Foto fuera de geocerca&quot;)).scalar_one()
+        assert inc.es_critica
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-20: salida real en SQL Server" src="evidencias/CP-20_resultado.png" /></p>
+<p><em>CP-20: salida real en SQL Server</em> — <code>docs/evidencias/CP-20_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-08 · Foto de Precios a 400 m: se guarda pero NO cuenta (CP-20) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-08_foto_fuera_geocerca.png" /></p>
+<p><em>UI-08 · Foto de Precios a 400 m: se guarda pero NO cuenta (CP-20) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-08_foto_fuera_geocerca.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-08 · Foto de Precios a 400 m: se guarda pero NO cuenta (CP-20) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-08_foto_fuera_geocerca.png" /></p>
+<p><em>UI-08 · Foto de Precios a 400 m: se guarda pero NO cuenta (CP-20) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-08_foto_fuera_geocerca.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<p><img alt="UI-09 · Cuatro categorías válidas (Promociones como exhibición Scribe) y foto rechazada marcada (interfaz con SQL Server)" src="evidencias/sqlserver/UI-09_cuatro_categorias.png" /></p>
+<p><em>UI-09 · Cuatro categorías válidas (Promociones como exhibición Scribe) y foto rechazada marcada (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-09_cuatro_categorias.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-09 · Cuatro categorías válidas (Promociones como exhibición Scribe) y foto rechazada marcada (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-09_cuatro_categorias.png" /></p>
+<p><em>UI-09 · Cuatro categorías válidas (Promociones como exhibición Scribe) y foto rechazada marcada (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-09_cuatro_categorias.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-21-check-out-bloqueado-por-categorias-faltantes">CP-21 · Check-out bloqueado por categorías faltantes</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_V04_checkout_bloqueado_por_categorias</code> (V04 · Check-out bloqueado si falta alguna categoría válida)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-04 Check-out; regla D (servidor comprueba las 4 categorías y comunica faltantes)</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (inválido)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>visita abierta con Anaquel antes y Anaquel después válidas, Precios fuera de geocerca</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>check-out dentro de la geocerca</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_V04_checkout_bloqueado_por_categorias -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 409 con faltantes = [Precios, Promociones]; visita sigue Abierta</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:02:45): <strong>1 passed in 13.39s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 409 · Faltan fotografías válidas para cerrar la visita: Precios, Promociones. · {'faltantes': ['Precios', 'Promociones']}<br>Detalle original (ejecución con SQLite): HTTP 409 · Faltan fotografías válidas para cerrar la visita: Precios, Promociones. · {'faltantes': ['Precios', 'Promociones']}</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_V04_checkout_bloqueado_por_categorias(app, esc, obs):
+    &quot;&quot;&quot;V04 · Check-out bloqueado si falta alguna categoría válida
+    RF: RF-04 Check-out; regla D (servidor comprueba las 4 categorías y comunica faltantes)
+    Tipo: inválido
+    Pre: visita abierta con Anaquel antes y Anaquel después válidas, Precios fuera de geocerca
+    Entrada: check-out dentro de la geocerca
+    Esperado: HTTP 409 con faltantes = [Precios, Promociones]; visita sigue Abierta
+    &quot;&quot;&quot;
+    c = _p1(app)
+    _iniciar(c, esc)
+    idv = _checkin(c, esc).get_json()[&quot;visita&quot;][&quot;id_visita&quot;]
+    subir_foto(c, idv, &quot;Anaquel antes&quot;, punto(esc.coords[0], 5))
+    subir_foto(c, idv, &quot;Anaquel después&quot;, punto(esc.coords[0], 5))
+    subir_foto(c, idv, &quot;Precios&quot;, punto(esc.coords[0], 400))
+    r = obs(c.post(&quot;/api/promotor/visitas/checkout&quot;, json={&quot;id_visita&quot;: idv, **punto(esc.coords[0], 5)}))
+    assert r.status_code == 409 and r.get_json()[&quot;faltantes&quot;] == [&quot;Precios&quot;, &quot;Promociones&quot;]
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-21: salida real en SQL Server" src="evidencias/CP-21_resultado.png" /></p>
+<p><em>CP-21: salida real en SQL Server</em> — <code>docs/evidencias/CP-21_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-07 · Check-out sin fotos: rechazo esperado con categorías faltantes (CP-21) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-07_checkout_sin_fotos.png" /></p>
+<p><em>UI-07 · Check-out sin fotos: rechazo esperado con categorías faltantes (CP-21) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-07_checkout_sin_fotos.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-07 · Check-out sin fotos: rechazo esperado con categorías faltantes (CP-21) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-07_checkout_sin_fotos.png" /></p>
+<p><em>UI-07 · Check-out sin fotos: rechazo esperado con categorías faltantes (CP-21) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-07_checkout_sin_fotos.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-22-check-out-valido-sin-cerrar-la-jornada">CP-22 · Check-out válido sin cerrar la jornada</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_V05_checkout_valido_no_cierra_jornada</code> (V05 · Check-out válido cierra la visita y mantiene la jornada abierta)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-04; reglas C5, C6 y C7</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Flujo válido</strong> (válido)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>visita abierta con las 4 categorías válidas (Promociones como exhibición sin promoción)</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>09:45 check-out a 30 m (nueva ubicación)</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_V05_checkout_valido_no_cierra_jornada -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 200; visita Cerrada con hora y coordenadas de salida propias; jornada sigue Abierta; estado En traslado</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:03:04): <strong>1 passed in 13.06s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 200 · Check-out registrado. Tiempo en tienda: 1 h 40 min. Tu jornada sigue abierta.<br>Detalle original (ejecución con SQLite): HTTP 200 · Check-out registrado. Tiempo en tienda: 1 h 40 min. Tu jornada sigue abierta.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_V05_checkout_valido_no_cierra_jornada(app, esc, obs):
+    &quot;&quot;&quot;V05 · Check-out válido cierra la visita y mantiene la jornada abierta
+    RF: RF-04; reglas C5, C6 y C7
+    Tipo: válido
+    Pre: visita abierta con las 4 categorías válidas (Promociones como exhibición sin promoción)
+    Entrada: 09:45 check-out a 30 m (nueva ubicación)
+    Esperado: HTTP 200; visita Cerrada con hora y coordenadas de salida propias; jornada sigue Abierta; estado En traslado
+    &quot;&quot;&quot;
+    c = _p1(app)
+    _iniciar(c, esc)
+    idv = _checkin(c, esc).get_json()[&quot;visita&quot;][&quot;id_visita&quot;]
+    for cat in CATS[:3]:
+        subir_foto(c, idv, cat, punto(esc.coords[0], 5))
+    assert subir_foto(c, idv, &quot;Promociones&quot;, punto(esc.coords[0], 5), sin_promocion=True).status_code == 201
+    a_las(9, 45)
+    r = obs(c.post(&quot;/api/promotor/visitas/checkout&quot;, json={&quot;id_visita&quot;: idv, **punto(esc.coords[0], 30)}))
+    v = r.get_json()[&quot;visita&quot;]
+    assert r.status_code == 200 and v[&quot;estado&quot;] == &quot;Cerrada&quot; and v[&quot;checkout&quot;].endswith(&quot;09:45:00&quot;)
+    assert 29 &lt; v[&quot;distancia_checkout_m&quot;] &lt; 31
+    hoy = c.get(&quot;/api/promotor/hoy&quot;).get_json()
+    assert hoy[&quot;jornada&quot;][&quot;estado&quot;] == &quot;Abierta&quot; and hoy[&quot;estado&quot;][&quot;estado_visita&quot;] == &quot;En traslado&quot;
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-22: salida real en SQL Server" src="evidencias/CP-22_resultado.png" /></p>
+<p><em>CP-22: salida real en SQL Server</em> — <code>docs/evidencias/CP-22_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-10 · Check-out válido: la visita se cierra y la jornada sigue abierta (CP-22) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-10_checkout_jornada_abierta.png" /></p>
+<p><em>UI-10 · Check-out válido: la visita se cierra y la jornada sigue abierta (CP-22) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-10_checkout_jornada_abierta.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-10 · Check-out válido: la visita se cierra y la jornada sigue abierta (CP-22) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-10_checkout_jornada_abierta.png" /></p>
+<p><em>UI-10 · Check-out válido: la visita se cierra y la jornada sigue abierta (CP-22) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-10_checkout_jornada_abierta.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-23-cierre-de-jornada-con-visitas-pendientes">CP-23 · Cierre de jornada con visitas pendientes</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_J06_finalizar_con_pendientes</code> (J06 · Cierre de jornada conforme a visitas pendientes)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-01/RF-04; reglas C7, C8 y C9</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Flujo válido</strong> (inválido y válido con motivo)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 visitó Walmart; Soriana sigue pendiente</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>(a) finalizar con visita abierta; (b) finalizar sin motivo; (c) forzar con motivo</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_J06_finalizar_con_pendientes -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>(a) 409 check-out pendiente; (b) 409 con pendientes [Soriana]; (c) 200 Finalizada + incidencia</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:03:23): <strong>1 passed in 16.31s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 200 · Jornada finalizada. El seguimiento de ubicación se detuvo.<br>Detalle original (ejecución con SQLite): HTTP 200 · Jornada finalizada. El seguimiento de ubicación se detuvo.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_J06_finalizar_con_pendientes(app, esc, obs):
+    &quot;&quot;&quot;J06 · Cierre de jornada conforme a visitas pendientes
+    RF: RF-01/RF-04; reglas C7, C8 y C9
+    Tipo: inválido y válido con motivo
+    Pre: P1 visitó Walmart; Soriana sigue pendiente
+    Entrada: (a) finalizar con visita abierta; (b) finalizar sin motivo; (c) forzar con motivo
+    Esperado: (a) 409 check-out pendiente; (b) 409 con pendientes [Soriana]; (c) 200 Finalizada + incidencia
+    &quot;&quot;&quot;
+    c = _p1(app)
+    _iniciar(c, esc)
+    idv = _checkin(c, esc).get_json()[&quot;visita&quot;][&quot;id_visita&quot;]
+    fin = {**punto(esc.coords[0])}
+    assert &quot;check-out&quot; in c.post(&quot;/api/promotor/jornada/finalizar&quot;, json=fin).get_json()[&quot;error&quot;]
+    _cuatro_fotos(c, esc, idv)
+    c.post(&quot;/api/promotor/visitas/checkout&quot;, json={&quot;id_visita&quot;: idv, **punto(esc.coords[0])})
+    r = c.post(&quot;/api/promotor/jornada/finalizar&quot;, json=fin)
+    assert r.status_code == 409 and r.get_json()[&quot;pendientes&quot;] == [&quot;Soriana San Juan Bosco&quot;]
+    r = obs(c.post(&quot;/api/promotor/jornada/finalizar&quot;, json={**fin, &quot;forzar&quot;: True,
+                                                           &quot;motivo&quot;: &quot;La tienda Soriana cerró por inventario&quot;}))
+    assert r.status_code == 200 and r.get_json()[&quot;jornada&quot;][&quot;cierre_forzado&quot;] is True
+    with app.app_context():
+        assert db.session.execute(db.select(Incidencia).where(
+            Incidencia.tipo == &quot;Jornada cerrada con tiendas pendientes&quot;)).scalar_one()
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-23: salida real en SQL Server" src="evidencias/CP-23_resultado.png" /></p>
+<p><em>CP-23: salida real en SQL Server</em> — <code>docs/evidencias/CP-23_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-12 · Finalizar con 2 tiendas sin visitar: el servidor exige motivo (CP-23) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-12_finalizar_con_pendientes.png" /></p>
+<p><em>UI-12 · Finalizar con 2 tiendas sin visitar: el servidor exige motivo (CP-23) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-12_finalizar_con_pendientes.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-12 · Finalizar con 2 tiendas sin visitar: el servidor exige motivo (CP-23) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-12_finalizar_con_pendientes.png" /></p>
+<p><em>UI-12 · Finalizar con 2 tiendas sin visitar: el servidor exige motivo (CP-23) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-12_finalizar_con_pendientes.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<p><img alt="UI-13 · Jornada finalizada con motivo: seguimiento detenido (CP-23, CP-24) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-13_jornada_finalizada.png" /></p>
+<p><em>UI-13 · Jornada finalizada con motivo: seguimiento detenido (CP-23, CP-24) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-13_jornada_finalizada.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-13 · Jornada finalizada con motivo: seguimiento detenido (CP-23, CP-24) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-13_jornada_finalizada.png" /></p>
+<p><em>UI-13 · Jornada finalizada con motivo: seguimiento detenido (CP-23, CP-24) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-13_jornada_finalizada.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-24-seguimiento-suspendido-en-pausa-y-tras-el-cierre">CP-24 · Seguimiento suspendido en pausa y tras el cierre</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_jornada.py::test_P02_rastreo_suspendido_en_pausa_y_tras_cierre</code> (P02 · Suspensión del seguimiento durante pausas y después del cierre)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-02, RF-08; Limitación 7 (no rastrea fuera de jornada ni en pausa)</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Flujo válido</strong> (inválido (el servidor rechaza puntos))</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>jornada abierta</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>ubicación normal (09:00); pausa de descanso; ubicación en pausa; fin de pausa; cierre; ubicación tras cierre</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_jornada.py::test_P02_rastreo_suspendido_en_pausa_y_tras_cierre -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>201, luego 409 "suspendido durante la pausa", y 409 tras finalizar; estado "Rastreo suspendido"</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:03:46): <strong>1 passed in 13.44s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 409 · El seguimiento está suspendido durante la pausa.<br>Detalle original (ejecución con SQLite): HTTP 409 · El seguimiento está suspendido durante la pausa.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_P02_rastreo_suspendido_en_pausa_y_tras_cierre(app, esc, obs):
+    &quot;&quot;&quot;P02 · Suspensión del seguimiento durante pausas y después del cierre
+    RF: RF-02, RF-08; Limitación 7 (no rastrea fuera de jornada ni en pausa)
+    Tipo: inválido (el servidor rechaza puntos)
+    Pre: jornada abierta
+    Entrada: ubicación normal (09:00); pausa de descanso; ubicación en pausa; fin de pausa; cierre; ubicación tras cierre
+    Esperado: 201, luego 409 &quot;suspendido durante la pausa&quot;, y 409 tras finalizar; estado &quot;Rastreo suspendido&quot;
+    &quot;&quot;&quot;
+    c = _p1(app)
+    _iniciar(c, esc)
+    a_las(9, 0)
+    assert c.post(&quot;/api/promotor/ubicaciones&quot;, json=punto(esc.coords[0], 300)).status_code == 201
+    c.post(&quot;/api/promotor/pausas/iniciar&quot;, json={&quot;tipo&quot;: &quot;Descanso&quot;})
+    a_las(9, 10)
+    r = obs(c.post(&quot;/api/promotor/ubicaciones&quot;, json=punto(esc.coords[0], 300)))
+    assert r.status_code == 409 and r.get_json()[&quot;codigo_rastreo&quot;] == &quot;en_pausa&quot;
+    hoy = c.get(&quot;/api/promotor/hoy&quot;).get_json()
+    assert hoy[&quot;rastreo_activo&quot;] is False and hoy[&quot;estado&quot;][&quot;estado_conexion&quot;] == &quot;Rastreo suspendido&quot;
+    a_las(9, 15)
+    c.post(&quot;/api/promotor/pausas/finalizar&quot;, json={})
+    c.post(&quot;/api/promotor/jornada/finalizar&quot;, json={**punto(esc.coords[0]), &quot;forzar&quot;: True,
+                                                   &quot;motivo&quot;: &quot;Prueba de rastreo tras el cierre&quot;})
+    a_las(9, 30)
+    r = c.post(&quot;/api/promotor/ubicaciones&quot;, json=punto(esc.coords[0], 300))
+    assert r.status_code == 409 and r.get_json()[&quot;codigo_rastreo&quot;] == &quot;sin_jornada&quot;
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-24: salida real en SQL Server" src="evidencias/CP-24_resultado.png" /></p>
+<p><em>CP-24: salida real en SQL Server</em> — <code>docs/evidencias/CP-24_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-11 · Pausa de descanso con temporizador: seguimiento detenido (CP-24) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-11_pausa_activa.png" /></p>
+<p><em>UI-11 · Pausa de descanso con temporizador: seguimiento detenido (CP-24) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-11_pausa_activa.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-11 · Pausa de descanso con temporizador: seguimiento detenido (CP-24) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-11_pausa_activa.png" /></p>
+<p><em>UI-11 · Pausa de descanso con temporizador: seguimiento detenido (CP-24) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-11_pausa_activa.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-25-reintentos-sin-duplicados">CP-25 · Reintentos sin duplicados</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_supervision_reportes.py::test_O01_reintento_sin_duplicados</code> (O01 · Reintentos con el mismo identificador no duplican registros)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RNF-08/RNF-09 sincronización; regla C9 (sin duplicados)</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Flujo válido</strong> (válido (idempotencia))</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 con jornada iniciada</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>el mismo check-in y la misma foto enviados 3 veces con igual X-Id-Cliente</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_supervision_reportes.py::test_O01_reintento_sin_duplicados -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>misma respuesta (201) marcada "repetido"; 1 visita y 1 evidencia en la base</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:04:05): <strong>1 passed in 13.82s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 201 · Foto guardada correctamente (Precios).<br>Detalle original (ejecución con SQLite): HTTP 201 · Foto guardada correctamente (Precios).</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_O01_reintento_sin_duplicados(app, esc, obs):
+    &quot;&quot;&quot;O01 · Reintentos con el mismo identificador no duplican registros
+    RF: RNF-08/RNF-09 sincronización; regla C9 (sin duplicados)
+    Tipo: válido (idempotencia)
+    Pre: P1 con jornada iniciada
+    Entrada: el mismo check-in y la misma foto enviados 3 veces con igual X-Id-Cliente
+    Esperado: misma respuesta (201) marcada &quot;repetido&quot;; 1 visita y 1 evidencia en la base
+    &quot;&quot;&quot;
+    c = cliente(app, &quot;p1@test.mx&quot;)
+    c.post(&quot;/api/promotor/jornada/iniciar&quot;, json=punto(esc.coords[0], 10))
+    a = c.get(&quot;/api/promotor/hoy&quot;).get_json()[&quot;asignaciones&quot;][0]
+    cab = {&quot;X-Id-Cliente&quot;: str(uuid.uuid4())}
+    cuerpos = [c.post(&quot;/api/promotor/visitas/checkin&quot;, json={&quot;id_asignacion&quot;: a[&quot;id_asignacion&quot;],
+                                                             **punto(esc.coords[0], 5)}, headers=cab) for _ in range(3)]
+    assert [r.status_code for r in cuerpos] == [201, 201, 201]
+    assert cuerpos[2].get_json()[&quot;repetido&quot;] is True
+    idv = cuerpos[0].get_json()[&quot;visita&quot;][&quot;id_visita&quot;]
+    cab_f = {&quot;X-Id-Cliente&quot;: str(uuid.uuid4())}
+    datos = b&quot;\xff\xd8\xff\xe0&quot; + b&quot;x&quot; * 300
+    rs = [subir_foto(c, idv, &quot;Precios&quot;, punto(esc.coords[0], 5), datos=datos, cabeceras=cab_f) for _ in range(3)]
+    obs(rs[-1])
+    assert [r.status_code for r in rs] == [201, 201, 201]
+    with app.app_context():
+        assert db.session.execute(db.select(db.func.count()).select_from(Visita)).scalar_one() == 1
+        assert db.session.execute(db.select(db.func.count()).select_from(Evidencia)).scalar_one() == 1
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-25: salida real en SQL Server" src="evidencias/CP-25_resultado.png" /></p>
+<p><em>CP-25: salida real en SQL Server</em> — <code>docs/evidencias/CP-25_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<h3 id="cp-26-reporte-consistente-con-los-registros">CP-26 · Reporte consistente con los registros</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_supervision_reportes.py::test_REP01_reporte_consistente_con_registros</code> (REP01 · Reporte diario de desempeño consistente con los registros)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-13, RF-15 Reportes de desempeño</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Flujo válido</strong> (válido)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>P1 con 2 asignadas, 1 visitada (08:10-09:40), 1 foto fuera de geocerca adicional; jornada iniciada 08:05</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>S1 genera reporte Diario de Desempeño para P1 el 4-nov-2026</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_supervision_reportes.py::test_REP01_reporte_consistente_con_registros -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>asignadas 2, visitadas 1, cumplimiento 50 %, tiempo promedio 90 min, fotos válidas 4 de 5, incidencias 1 crítica</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:04:25): <strong>1 passed in 16.24s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 201 · Reporte generado.<br>Detalle original (ejecución con SQLite): HTTP 201 · Reporte generado.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_REP01_reporte_consistente_con_registros(app, esc, obs):
+    &quot;&quot;&quot;REP01 · Reporte diario de desempeño consistente con los registros
+    RF: RF-13, RF-15 Reportes de desempeño
+    Tipo: válido
+    Pre: P1 con 2 asignadas, 1 visitada (08:10-09:40), 1 foto fuera de geocerca adicional; jornada iniciada 08:05
+    Entrada: S1 genera reporte Diario de Desempeño para P1 el 4-nov-2026
+    Esperado: asignadas 2, visitadas 1, cumplimiento 50 %, tiempo promedio 90 min, fotos válidas 4 de 5, incidencias 1 crítica
+    &quot;&quot;&quot;
+    c, idv = _jornada_con_visita(app, esc, cerrar=False)
+    subir_foto(c, idv, &quot;Precios&quot;, punto(esc.coords[0], 500))
+    a_las(9, 40)
+    c.post(&quot;/api/promotor/visitas/checkout&quot;, json={&quot;id_visita&quot;: idv, **punto(esc.coords[0], 5)})
+    r = obs(cliente(app, &quot;s1@test.mx&quot;).post(&quot;/api/reportes&quot;, json={&quot;tipo&quot;: &quot;Diario&quot;, &quot;contenido&quot;: &quot;Desempeño&quot;,
+                                                                    &quot;fecha&quot;: &quot;2026-11-04&quot;, &quot;id_promotor&quot;: esc.ids.p1}))
+    assert r.status_code == 201
+    m = r.get_json()[&quot;metricas&quot;][&quot;promotores&quot;][0]
+    assert (m[&quot;tiendas_asignadas&quot;], m[&quot;tiendas_visitadas&quot;], m[&quot;cumplimiento_pct&quot;]) == (2, 1, 50.0)
+    assert m[&quot;tiempo_promedio_tienda_min&quot;] == 90 and (m[&quot;fotos_validas&quot;], m[&quot;fotos_total&quot;]) == (4, 5)
+    with app.app_context():
+        assert m[&quot;incidencias_total&quot;] == db.session.execute(db.select(db.func.count()).select_from(Incidencia).where(
+            Incidencia.id_promotor == esc.ids.p1)).scalar_one() == 1
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-26: salida real en SQL Server" src="evidencias/CP-26_resultado.png" /></p>
+<p><em>CP-26: salida real en SQL Server</em> — <code>docs/evidencias/CP-26_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-18 · Reporte diario de exhibición generado con datos reales (CP-26) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-18_reporte.png" /></p>
+<p><em>UI-18 · Reporte diario de exhibición generado con datos reales (CP-26) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-18_reporte.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-18 · Reporte diario de exhibición generado con datos reales (CP-26) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-18_reporte.png" /></p>
+<p><em>UI-18 · Reporte diario de exhibición generado con datos reales (CP-26) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-18_reporte.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<p><img alt="UI-19 · PDF descargado (interfaz con SQL Server)" src="evidencias/sqlserver/UI-19_reporte_pdf_p1.png" /></p>
+<p><em>UI-19 · PDF descargado (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-19_reporte_pdf_p1.png</code><br>📑 <strong>Origen:</strong> Primera página del PDF exportado, convertida a imagen</p>
+<p><img alt="UI-19 · PDF descargado (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-19_reporte_p1.png" /></p>
+<p><em>UI-19 · PDF descargado (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-19_reporte_p1.png</code><br>📑 <strong>Origen:</strong> Primera página del PDF exportado, convertida a imagen</p>
+<h3 id="cp-27-coordenadas-obligatorias-de-tienda">CP-27 · Coordenadas obligatorias de tienda</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>backend/tests/test_tiendas_rutas.py::test_T02_coordenadas_obligatorias</code> (T02 · Tienda sin coordenadas y con radio fuera de rango)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RF-19; excepción del modelo de diseño ("Las coordenadas GPS son obligatorias...")</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td><strong>Rechazo esperado</strong>: la prueba pasa porque el servidor rechaza la acción inválida (inválido)</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>sesión de Administrador</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>latitud vacía, longitud 500, radio 5 m</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>set ST_BD_PRUEBAS=ScribeTracker_Pruebas</code> y <code>python -m pytest tests/test_tiendas_rutas.py::test_T02_coordenadas_obligatorias -v</code> en <code>backend</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>HTTP 400 con mensaje en latitud, longitud y radio</td>
+</tr>
+<tr>
+<td>Resultado obtenido</td>
+<td>SQL Server (03/11/2026 15:04:47): <strong>1 passed in 12.80s</strong><br>Ejecución conjunta en SQL Server (1 passed): HTTP 400 · Revisa los campos marcados. · {'campos': {'latitud': 'Las coordenadas GPS son obligatorias para el cálculo de la geocerca.', 'longitud': 'Debe estar entre -180 y 180.', 'radio_geocerca_m': 'El radio debe ser un número entre 10 y 1000 metros.'}}<br>Detalle original (ejecución con SQLite): HTTP 400 · Revisa los campos marcados. · {'campos': {'latitud': 'Las coordenadas GPS son obligatorias para el cálculo de la geocerca.', 'longitud': 'Debe estar entre -180 y 180.', 'radio_geocerca_m': 'El radio debe ser un número entre 10 y 1000 metros.'}}</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Laptop15-Elizabeth · Windows 11 · Python 3.13 · <strong>SQL Server</strong>, base de pruebas <code>ScribeTracker_Pruebas</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong></p>
+<pre><code class="language-python">def test_T02_coordenadas_obligatorias(app, esc, obs):
+    &quot;&quot;&quot;T02 · Tienda sin coordenadas y con radio fuera de rango
+    RF: RF-19; excepción del modelo de diseño (&quot;Las coordenadas GPS son obligatorias...&quot;)
+    Tipo: inválido
+    Pre: sesión de Administrador
+    Entrada: latitud vacía, longitud 500, radio 5 m
+    Esperado: HTTP 400 con mensaje en latitud, longitud y radio
+    &quot;&quot;&quot;
+    r = obs(cliente(app, &quot;admin@test.mx&quot;).post(&quot;/api/tiendas&quot;, json={**TIENDA, &quot;latitud&quot;: &quot;&quot;, &quot;longitud&quot;: &quot;500&quot;,
+                                                                      &quot;radio_geocerca_m&quot;: 5}))
+    assert r.status_code == 400
+    campos = r.get_json()[&quot;campos&quot;]
+    assert &quot;obligatorias&quot; in campos[&quot;latitud&quot;] and &quot;longitud&quot; in campos and &quot;radio_geocerca_m&quot; in campos
+</code></pre>
+<p><strong>Evidencia</strong></p>
+<p><img alt="CP-27: salida real en SQL Server" src="evidencias/CP-27_resultado.png" /></p>
+<p><em>CP-27: salida real en SQL Server</em> — <code>docs/evidencias/CP-27_resultado.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><img alt="UI-25 · Alta de tienda sin coordenadas: rechazo esperado (CP-27) (interfaz con SQL Server)" src="evidencias/sqlserver/UI-25_tienda_sin_coordenadas.png" /></p>
+<p><em>UI-25 · Alta de tienda sin coordenadas: rechazo esperado (CP-27) (interfaz con SQL Server)</em> — <code>docs/evidencias/sqlserver/UI-25_tienda_sin_coordenadas.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-25 · Alta de tienda sin coordenadas: rechazo esperado (CP-27) (interfaz, SQLite de desarrollo, original)" src="evidencias/UI-25_tienda_sin_coordenadas.png" /></p>
+<p><em>UI-25 · Alta de tienda sin coordenadas: rechazo esperado (CP-27) (interfaz, SQLite de desarrollo, original)</em> — <code>docs/evidencias/UI-25_tienda_sin_coordenadas.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h3 id="cp-28-pantalla-actualizada-al-terminar-la-sincronizacion-angular">CP-28 · Pantalla actualizada al terminar la sincronización (Angular)</h3>
+<p>Fallo nuevo encontrado el 03/11/2026 al preparar las capturas de CP-07: la sincronización funcionaba (el servidor tenía la visita), pero la pantalla seguía mostrando el estado anterior. Se guardó la evidencia antes de corregir y se repitió el mismo caso después.</p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prueba</td>
+<td><code>scripts/evidencias/reproducir_sincronizacion.py</code> (Playwright, automatizada)</td>
+</tr>
+<tr>
+<td>Requisito funcional</td>
+<td>RNF-08 / RNF-09 Sin conexión (estados "pendiente" y "confirmado" separados); RF-03 Check-in</td>
+</tr>
+<tr>
+<td>Tipo de resultado</td>
+<td>Fallo <strong>F08</strong> · <strong>Defecto real del sistema</strong> (la pantalla mostraba un estado distinto al del servidor después de sincronizar).</td>
+</tr>
+<tr>
+<td>Precondiciones</td>
+<td>Promotor demo con 4 tiendas; jornada iniciada y visita a Walmart completa (4 fotos) y cerrada</td>
+</tr>
+<tr>
+<td>Datos de entrada</td>
+<td>Ubicación a 10 m de Soriana San Juan Bosco (21.1395, -101.7104); red desactivada; CHECK-IN; red restaurada</td>
+</tr>
+<tr>
+<td>Procedimiento</td>
+<td><code>python scripts/evidencias/reproducir_sincronizacion.py &lt;url&gt; &lt;carpeta&gt; antes/despues/sqlserver &lt;entorno&gt;</code>; a los 5 s de recuperar la señal compara la pantalla con <code>/api/promotor/hoy</code></td>
+</tr>
+<tr>
+<td>Resultado esperado</td>
+<td>5 s después de recuperar la señal, Soriana aparece "En curso", sin botón CHECK-IN, igual que en el servidor</td>
+</tr>
+<tr>
+<td>Resultado obtenido (antes)</td>
+<td>Pantalla: "2. Soriana San Juan Bosco / Blvd. San Juan Bosco 3802, León / Por visitar / CHECK-IN"; botón CHECK-IN visible: True; franja: "0 pendiente(s) de sincronizar · datos guardados en el teléfono". Servidor: visita Abierta, origen Sin conexión</td>
+</tr>
+<tr>
+<td>Resultado obtenido (después)</td>
+<td>Pantalla: "2. Soriana San Juan Bosco / Blvd. San Juan Bosco 3802, León / En curso / Entrada 15:19 · Salida —"; botón CHECK-IN visible: False; visita en curso: "En tienda: Soriana San Juan Bosco /  / Fotos válidas: 0/4 /  / 📷 TOMAR FOTOS / CHECK-OUT". Servidor: visita Abierta, origen Sin conexión</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa después de corregir (antes: fallida)</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Angular (build de producción compilado en la laptop) + Flask + SQLite de pruebas, entorno de desarrollo. Antes: build anterior; después: build de las 15:17 con la corrección</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Código de la prueba</strong> (fragmento de <code>reproducir_sincronizacion.py</code>)</p>
+<pre><code class="language-python">ctx.set_geolocation({&quot;latitude&quot;: SORIANA[0] + 10 * M, &quot;longitude&quot;: SORIANA[1], &quot;accuracy&quot;: 12})
+ctx.set_offline(True)
+page.locator(&quot;button&quot;, has_text=&quot;CHECK-IN&quot;).first.click()
+page.wait_for_selector(&quot;.franja&quot;)
+ctx.set_offline(False)
+page.evaluate(&quot;window.dispatchEvent(new Event('online'))&quot;)
+time.sleep(5)
+pantalla = {...}   # estado de Soriana y botón CHECK-IN en la pantalla
+servidor = page.evaluate(&quot;fetch('/api/promotor/hoy')...asignaciones[1].visita&quot;)
+</code></pre>
+<p><strong>Antes de corregir (F08)</strong></p>
+<p><img alt="CP-28 antes: la pantalla dice Por visitar y CHECK-IN mientras el servidor ya tiene la visita abierta" src="evidencias/CP-28_antes.png" /></p>
+<p><em>CP-28 antes: la pantalla dice Por visitar y CHECK-IN mientras el servidor ya tiene la visita abierta</em> — <code>docs/evidencias/CP-28_antes.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<ul>
+<li><strong>Causa:</strong> Al terminar la sincronización, la cola quitaba los eventos pendientes, pero la pantalla del promotor no volvía a leer <code>/api/promotor/hoy</code> hasta el refresco automático de 60 s. Durante ese tiempo Soriana aparecía "Por visitar" con el botón CHECK-IN, aunque el servidor ya tenía la visita abierta, y la franja decía "0 pendiente(s) · datos guardados en el teléfono". Un segundo CHECK-IN habría sido rechazado y confundía al promotor.</li>
+<li><strong>Archivos corregidos:</strong> <code>frontend/src/app/core/cola.service.ts y frontend/src/app/promotor/promotor.service.ts</code></li>
+<li><strong>Fragmento antes:</strong></li>
+</ul>
+<pre><code class="language-ts">// cola.service.ts: al terminar sincronizar() no se avisaba a nadie
+} finally {
+  this.sincronizando.set(false);
+}
+// promotor-shell.ts: la pantalla solo se recargaba al entrar y cada 60 s
+this.refresco = setInterval(() =&gt; void this.ps.cargar(), 60_000);
+</code></pre>
+<ul>
+<li><strong>Fragmento después:</strong></li>
+</ul>
+<pre><code class="language-ts">// cola.service.ts
+alSincronizar(oyente: () =&gt; void) { this.oyentes.push(oyente); }
+...
+} finally {
+  this.sincronizando.set(false);
+}
+for (const oyente of this.oyentes) oyente();
+
+// promotor.service.ts
+constructor() {
+  this.cola.alSincronizar(() =&gt; { if (this.cola.enLinea()) void this.cargar(); });
+}
+</code></pre>
+<ul>
+<li><strong>Por qué ahora pasa:</strong> Al terminar cada sincronización con red, la pantalla vuelve a pedir el estado al servidor; 5 s después de recuperar la señal ya muestra la visita "En curso" y oculta el botón CHECK-IN.</li>
+</ul>
+<p><strong>Después de corregir</strong> · el mismo caso</p>
+<p><img alt="CP-28 después: la pantalla coincide con el servidor (En curso, sin CHECK-IN)" src="evidencias/CP-28_despues.png" /></p>
+<p><em>CP-28 después: la pantalla coincide con el servidor (En curso, sin CHECK-IN)</em> — <code>docs/evidencias/CP-28_despues.png</code><br>📄 <strong>Origen:</strong> Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</p>
+<p><strong>Mismo caso repetido con SQL Server</strong> (laptop, <code>ScribeTracker_Pruebas</code>, build con la corrección)</p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Resultado obtenido</td>
+<td>Pantalla: "2. Soriana San Juan Bosco / Blvd. San Juan Bosco 3802, León / En curso / Entrada 15:52 · Salida —"; botón CHECK-IN visible: False; franja: "(sin franja)". Servidor (SQL Server): {'estado': 'Abierta', 'origen': 'Sin conexión', 'checkin': '2026-11-03T15:52:39'} · hora 2026-11-03T15:52:48</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td>Exitosa: la pantalla coincide con el servidor</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="CP-28 con SQL Server: la pantalla coincide con el servidor" src="evidencias/CP-28_sqlserver.png" /></p>
+<p><em>CP-28 con SQL Server: la pantalla coincide con el servidor</em> — <code>docs/evidencias/CP-28_sqlserver.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h2 id="5-pruebas-desde-angular-en-la-laptop-con-sql-server-real-e2e">5. Pruebas desde Angular en la laptop con SQL Server real (E2E)</h2>
+<p>Registradas en <code>docs/pruebas/pruebas_e2e.json</code> (02/11/2026, navegador integrado + Flask + base <code>ScribeTracker</code>). No hay capturas de estas ejecuciones porque ese navegador no guarda imágenes; las pantallas equivalentes están en el anexo.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Nombre</th>
+<th>RF</th>
+<th>Esperado</th>
+<th>Obtenido</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E2E-01</td>
+<td>Inicio de jornada fuera de la primera tienda</td>
+<td>RF-01; regla C2</td>
+<td>Rechazo con distancia y radio</td>
+<td>Aviso: "Para iniciar tu jornada debes estar en tu primera tienda: Walmart Torres Landa. Estás a 2297 m y el radio permitido es de 90 m."</td>
+<td>exitosa</td>
+</tr>
+<tr>
+<td>E2E-02</td>
+<td>Inicio de jornada en la primera tienda</td>
+<td>RF-01; reglas C1-C2</td>
+<td>Jornada iniciada y rastreo activo</td>
+<td>Aviso "Jornada iniciada. El seguimiento de ubicación está activo."; estado "Jornada activa"; aparecen los botones CHECK-IN</td>
+<td>exitosa</td>
+</tr>
+<tr>
+<td>E2E-03</td>
+<td>Check-in y check-out bloqueado sin fotos</td>
+<td>RF-03, RF-04; regla D</td>
+<td>Check-in registrado; check-out rechazado con categorías faltantes</td>
+<td>"Check-in registrado correctamente en Walmart Torres Landa." y "Faltan fotografías válidas para cerrar la visita: Anaquel antes, Anaquel después, Precios, Promociones."</td>
+<td>exitosa</td>
+</tr>
+<tr>
+<td>E2E-04</td>
+<td>Fotos con cámara integrada y geocerca</td>
+<td>RF-05, RF-06, RF-12</td>
+<td>La foto lejana se guarda sin contar; las 4 categorías quedan válidas</td>
+<td>"La foto se guardó pero NO cuenta para la visita: Tomada a 399 m de la tienda (radio 90 m)."; lista ✔ en las 4 categorías; galería: Precios Fuera de geocerca (400 m) y 4 Válidas (11 m)</td>
+<td>exitosa</td>
+</tr>
+<tr>
+<td>E2E-05</td>
+<td>Check-out sin cerrar la jornada</td>
+<td>RF-04; reglas C5-C7</td>
+<td>Visita cerrada, jornada abierta</td>
+<td>"Check-out registrado. Tiempo en tienda: 0 h 1 min. Tu jornada sigue abierta."; Walmart "Visitada", Soriana "Por visitar" con CHECK-IN; estado "Jornada activa"</td>
+<td>exitosa</td>
+</tr>
+<tr>
+<td>E2E-06</td>
+<td>Pausa de descanso detiene el seguimiento</td>
+<td>RF-02, RF-08</td>
+<td>Pausa iniciada, rastreo suspendido y punto rechazado</td>
+<td>"Pausa de descanso iniciada (20 min). El seguimiento de ubicación está detenido."; servidor: estado_jornada "En pausa", estado_conexion "Rastreo suspendido", rastreo_activo false; ubicación 409 "El seguimiento está suspendido durante la pausa."; "Pausa finalizada. Rastreo reactivado."</td>
+<td>exitosa</td>
+</tr>
+<tr>
+<td>E2E-07</td>
+<td>Sincronización sin conexión</td>
+<td>RNF-08, RNF-09</td>
+<td>Eventos marcados como pendientes (no validados) y enviados al volver la red</td>
+<td>Primera ejecución: pendientes correctos pero NO se sincronizaron (defecto F07). Tras la corrección: 0 pendientes; visita Soriana con origen "Sin conexión"; foto capturada 23:23:17, recibida 23:25:03</td>
+<td>fallida → corregida → exitosa</td>
+</tr>
+<tr>
+<td>E2E-08</td>
+<td>Monitoreo del supervisor</td>
+<td>RF-10, RF-11</td>
+<td>Estados separados, última ubicación y alertas críticas</td>
+<td>Resumen: En tienda 1; tabla: Activo · En jornada · En tienda Soriana San Juan Bosco · Reciente · 23:21 · visitas 1/4 · pausas 1; alerta crítica "Foto fuera de geocerca"</td>
+<td>exitosa</td>
+</tr>
+<tr>
+<td>E2E-09</td>
+<td>Reporte de exhibición en PDF</td>
+<td>RF-13, RF-15, RF-16</td>
+<td>Métricas iguales a los registros y PDF con fotos</td>
+<td>201 "Reporte generado."; asignadas 4, visitadas 1, fotos 5 válidas de 6, 1 fuera de geocerca, 2 incidencias; PDF 67,655 bytes (%PDF-1.4) con 5 imágenes</td>
+<td>exitosa</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-anexo-a-recorrido-de-la-interfaz-con-sql-server-laptop">6. Anexo A: recorrido de la interfaz con SQL Server (laptop)</h2>
+<p>Capturas tomadas en la laptop con la aplicación compilada (Angular), Flask y SQL Server, base de pruebas <code>ScribeTracker_Pruebas</code> (sembrada con datos de demostración; nunca la base real). Ubicación y cámara simuladas por Chromium. La contraseña temporal de UI-24 se tapó a propósito antes de capturar. En UI-05 las teselas del mapa (OpenStreetMap) no terminaron de cargar al momento de capturar; los marcadores, el estado y la lista sí son los reales.</p>
+<h4 id="ui-01-pantalla-de-inicio-de-sesion-sql-server">UI-01 · Pantalla de inicio de sesión (SQL Server)</h4>
+<p><img alt="UI-01 con SQL Server" src="evidencias/sqlserver/UI-01_login.png" /></p>
+<p><em>UI-01 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-01_login.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-02-login-de-cuenta-inactiva-el-servidor-rechaza-el-acceso-cp-09-sql-server">UI-02 · Login de cuenta Inactiva: el servidor rechaza el acceso (CP-09) (SQL Server)</h4>
+<p><img alt="UI-02 con SQL Server" src="evidencias/sqlserver/UI-02_cuenta_inactiva.png" /></p>
+<p><em>UI-02 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-02_cuenta_inactiva.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-03-inicio-del-promotor-rol-promotor-sql-server">UI-03 · Inicio del promotor (rol Promotor) (SQL Server)</h4>
+<p><img alt="UI-03 con SQL Server" src="evidencias/sqlserver/UI-03_inicio_promotor.png" /></p>
+<p><em>UI-03 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-03_inicio_promotor.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-04-ubicacion-en-soriana-tienda-2-inicio-de-jornada-rechazado-cp-16-sql-server">UI-04 · Ubicación en Soriana (tienda 2): inicio de jornada rechazado (CP-16) (SQL Server)</h4>
+<p><img alt="UI-04 con SQL Server" src="evidencias/sqlserver/UI-04_inicio_fuera_primera_tienda.png" /></p>
+<p><em>UI-04 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-04_inicio_fuera_primera_tienda.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-05-a-20-m-de-walmart-tienda-1-jornada-iniciada-sin-visita-todavia-cp-15-cp-18-sql-server">UI-05 · A 20 m de Walmart (tienda 1): jornada iniciada, sin visita todavía (CP-15, CP-18) (SQL Server)</h4>
+<p><img alt="UI-05 con SQL Server" src="evidencias/sqlserver/UI-05_jornada_iniciada.png" /></p>
+<p><em>UI-05 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-05_jornada_iniciada.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-06-check-in-independiente-en-walmart-torres-landa-cp-18-sql-server">UI-06 · Check-in independiente en Walmart Torres Landa (CP-18) (SQL Server)</h4>
+<p><img alt="UI-06 con SQL Server" src="evidencias/sqlserver/UI-06_checkin.png" /></p>
+<p><em>UI-06 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-06_checkin.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-07-check-out-sin-fotos-rechazo-esperado-con-categorias-faltantes-cp-21-sql-server">UI-07 · Check-out sin fotos: rechazo esperado con categorías faltantes (CP-21) (SQL Server)</h4>
+<p><img alt="UI-07 con SQL Server" src="evidencias/sqlserver/UI-07_checkout_sin_fotos.png" /></p>
+<p><em>UI-07 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-07_checkout_sin_fotos.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-08-foto-de-precios-a-400-m-se-guarda-pero-no-cuenta-cp-20-sql-server">UI-08 · Foto de Precios a 400 m: se guarda pero NO cuenta (CP-20) (SQL Server)</h4>
+<p><img alt="UI-08 con SQL Server" src="evidencias/sqlserver/UI-08_foto_fuera_geocerca.png" /></p>
+<p><em>UI-08 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-08_foto_fuera_geocerca.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-09-cuatro-categorias-validas-promociones-como-exhibicion-scribe-y-foto-rechazada-marcada-sql-server">UI-09 · Cuatro categorías válidas (Promociones como exhibición Scribe) y foto rechazada marcada (SQL Server)</h4>
+<p><img alt="UI-09 con SQL Server" src="evidencias/sqlserver/UI-09_cuatro_categorias.png" /></p>
+<p><em>UI-09 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-09_cuatro_categorias.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-10-check-out-valido-la-visita-se-cierra-y-la-jornada-sigue-abierta-cp-22-sql-server">UI-10 · Check-out válido: la visita se cierra y la jornada sigue abierta (CP-22) (SQL Server)</h4>
+<p><img alt="UI-10 con SQL Server" src="evidencias/sqlserver/UI-10_checkout_jornada_abierta.png" /></p>
+<p><em>UI-10 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-10_checkout_jornada_abierta.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-11-pausa-de-descanso-con-temporizador-seguimiento-detenido-cp-24-sql-server">UI-11 · Pausa de descanso con temporizador: seguimiento detenido (CP-24) (SQL Server)</h4>
+<p><img alt="UI-11 con SQL Server" src="evidencias/sqlserver/UI-11_pausa_activa.png" /></p>
+<p><em>UI-11 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-11_pausa_activa.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-12-finalizar-con-2-tiendas-sin-visitar-el-servidor-exige-motivo-cp-23-sql-server">UI-12 · Finalizar con 2 tiendas sin visitar: el servidor exige motivo (CP-23) (SQL Server)</h4>
+<p><img alt="UI-12 con SQL Server" src="evidencias/sqlserver/UI-12_finalizar_con_pendientes.png" /></p>
+<p><em>UI-12 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-12_finalizar_con_pendientes.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-13-jornada-finalizada-con-motivo-seguimiento-detenido-cp-23-cp-24-sql-server">UI-13 · Jornada finalizada con motivo: seguimiento detenido (CP-23, CP-24) (SQL Server)</h4>
+<p><img alt="UI-13 con SQL Server" src="evidencias/sqlserver/UI-13_jornada_finalizada.png" /></p>
+<p><em>UI-13 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-13_jornada_finalizada.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-14-historial-propio-del-dia-tiendas-horarios-pausas-y-fotos-sql-server">UI-14 · Historial propio del día: tiendas, horarios, pausas y fotos (SQL Server)</h4>
+<p><img alt="UI-14 con SQL Server" src="evidencias/sqlserver/UI-14_historial.png" /></p>
+<p><em>UI-14 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-14_historial.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-15-supervisor-estados-separados-ultima-ubicacion-y-alertas-criticas-internas-sql-server">UI-15 · Supervisor: estados separados, última ubicación y alertas críticas internas (SQL Server)</h4>
+<p><img alt="UI-15 con SQL Server" src="evidencias/sqlserver/UI-15_supervisor_mapa.png" /></p>
+<p><em>UI-15 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-15_supervisor_mapa.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-16-rutas-del-dia-recorrido-visitas-incidencias-y-evidencias-con-su-validacion-sql-server">UI-16 · Rutas del día: recorrido, visitas, incidencias y evidencias con su validación (SQL Server)</h4>
+<p><img alt="UI-16 con SQL Server" src="evidencias/sqlserver/UI-16_supervisor_seguimiento.png" /></p>
+<p><em>UI-16 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-16_supervisor_seguimiento.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-17-historial-de-incidencias-con-seguimiento-manual-sql-server">UI-17 · Historial de incidencias con seguimiento manual (SQL Server)</h4>
+<p><img alt="UI-17 con SQL Server" src="evidencias/sqlserver/UI-17_incidencias.png" /></p>
+<p><em>UI-17 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-17_incidencias.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-18-reporte-diario-de-exhibicion-generado-con-datos-reales-cp-26-sql-server">UI-18 · Reporte diario de exhibición generado con datos reales (CP-26) (SQL Server)</h4>
+<p><img alt="UI-18 con SQL Server" src="evidencias/sqlserver/UI-18_reporte.png" /></p>
+<p><em>UI-18 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-18_reporte.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-20-gestion-de-rutas-asignacion-manual-por-fecha-y-orden-advertencia-por-cantidad-sql-server">UI-20 · Gestión de rutas: asignación manual por fecha y orden (advertencia por cantidad) (SQL Server)</h4>
+<p><img alt="UI-20 con SQL Server" src="evidencias/sqlserver/UI-20_asignacion.png" /></p>
+<p><em>UI-20 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-20_asignacion.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-21-administrador-resumen-general-alertas-y-ultimas-actividades-sql-server">UI-21 · Administrador: resumen general, alertas y últimas actividades (SQL Server)</h4>
+<p><img alt="UI-21 con SQL Server" src="evidencias/sqlserver/UI-21_admin_inicio.png" /></p>
+<p><em>UI-21 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-21_admin_inicio.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-22-alta-de-usuario-vacia-mensajes-por-campo-obligatorio-cp-11-sql-server">UI-22 · Alta de usuario vacía: mensajes por campo obligatorio (CP-11) (SQL Server)</h4>
+<p><img alt="UI-22 con SQL Server" src="evidencias/sqlserver/UI-22_alta_campos_obligatorios.png" /></p>
+<p><em>UI-22 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-22_alta_campos_obligatorios.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-23-correo-ya-registrado-el-servidor-rechaza-el-duplicado-cp-12-sql-server">UI-23 · Correo ya registrado: el servidor rechaza el duplicado (CP-12) (SQL Server)</h4>
+<p><img alt="UI-23 con SQL Server" src="evidencias/sqlserver/UI-23_alta_correo_duplicado.png" /></p>
+<p><em>UI-23 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-23_alta_correo_duplicado.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-24-usuario-creado-la-contrasena-temporal-se-muestra-una-sola-vez-aqui-oculta-a-proposito-sql-server">UI-24 · Usuario creado: la contraseña temporal se muestra una sola vez (aquí oculta a propósito) (SQL Server)</h4>
+<p><img alt="UI-24 con SQL Server" src="evidencias/sqlserver/UI-24_alta_usuario.png" /></p>
+<p><em>UI-24 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-24_alta_usuario.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-25-alta-de-tienda-sin-coordenadas-rechazo-esperado-cp-27-sql-server">UI-25 · Alta de tienda sin coordenadas: rechazo esperado (CP-27) (SQL Server)</h4>
+<p><img alt="UI-25 con SQL Server" src="evidencias/sqlserver/UI-25_tienda_sin_coordenadas.png" /></p>
+<p><em>UI-25 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-25_tienda_sin_coordenadas.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-26-parametros-globales-tolerancias-20-y-30-min-separadas-sql-server">UI-26 · Parámetros globales (tolerancias 20 y 30 min separadas) (SQL Server)</h4>
+<p><img alt="UI-26 con SQL Server" src="evidencias/sqlserver/UI-26_parametros.png" /></p>
+<p><em>UI-26 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-26_parametros.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="ui-27-promotor-sin-acceso-al-panel-la-ruta-redirige-y-la-api-responde-403-cp-10-cp-13-sql-server">UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (SQL Server)</h4>
+<p><img alt="UI-27 con SQL Server" src="evidencias/sqlserver/UI-27_permisos_promotor.png" /></p>
+<p><em>UI-27 con SQL Server</em> — <code>docs/evidencias/sqlserver/UI-27_permisos_promotor.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<p><img alt="UI-19 con SQL Server · primera página del PDF (docs/evidencias/sqlserver/UI-19_reporte.pdf)" src="evidencias/sqlserver/UI-19_reporte_pdf_p1.png" /></p>
+<p><em>UI-19 con SQL Server · primera página del PDF (docs/evidencias/sqlserver/UI-19_reporte.pdf)</em> — <code>docs/evidencias/sqlserver/UI-19_reporte_pdf_p1.png</code><br>📑 <strong>Origen:</strong> Primera página del PDF exportado, convertida a imagen</p>
+<h4 id="cp-07_despues_1_sin_conexion-sql-server">CP-07_despues_1_sin_conexion (SQL Server)</h4>
+<p><img alt="CP-07_despues_1_sin_conexion con SQL Server" src="evidencias/sqlserver/CP-07_despues_1_sin_conexion.png" /></p>
+<p><em>CP-07_despues_1_sin_conexion con SQL Server</em> — <code>docs/evidencias/sqlserver/CP-07_despues_1_sin_conexion.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h4 id="cp-07_despues_2_sincronizado-sql-server">CP-07_despues_2_sincronizado (SQL Server)</h4>
+<p><img alt="CP-07_despues_2_sincronizado con SQL Server" src="evidencias/sqlserver/CP-07_despues_2_sincronizado.png" /></p>
+<p><em>CP-07_despues_2_sincronizado con SQL Server</em> — <code>docs/evidencias/sqlserver/CP-07_despues_2_sincronizado.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</p>
+<h2 id="6b-anexo-b-recorrido-de-la-interfaz-original-desarrollo-sqlite">6b. Anexo B: recorrido de la interfaz original (desarrollo, SQLite)</h2>
+<p>Capturas tomadas con la aplicación compilada (Angular) y Flask sobre SQLite de pruebas. Cada imagen lleva abajo el caso, el entorno y la hora. La contraseña temporal de UI-24 se tapó a propósito antes de capturar.</p>
+<h4 id="ui-01-pantalla-de-inicio-de-sesion">UI-01 · Pantalla de inicio de sesión</h4>
+<p><img alt="UI-01" src="evidencias/UI-01_login.png" /></p>
+<p><em>UI-01</em> — <code>docs/evidencias/UI-01_login.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-02-login-de-cuenta-inactiva-el-servidor-rechaza-el-acceso-cp-09">UI-02 · Login de cuenta Inactiva: el servidor rechaza el acceso (CP-09)</h4>
+<p><img alt="UI-02" src="evidencias/UI-02_cuenta_inactiva.png" /></p>
+<p><em>UI-02</em> — <code>docs/evidencias/UI-02_cuenta_inactiva.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-03-inicio-del-promotor-rol-promotor">UI-03 · Inicio del promotor (rol Promotor)</h4>
+<p><img alt="UI-03" src="evidencias/UI-03_inicio_promotor.png" /></p>
+<p><em>UI-03</em> — <code>docs/evidencias/UI-03_inicio_promotor.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-04-ubicacion-en-soriana-tienda-2-inicio-de-jornada-rechazado-cp-16">UI-04 · Ubicación en Soriana (tienda 2): inicio de jornada rechazado (CP-16)</h4>
+<p><img alt="UI-04" src="evidencias/UI-04_inicio_fuera_primera_tienda.png" /></p>
+<p><em>UI-04</em> — <code>docs/evidencias/UI-04_inicio_fuera_primera_tienda.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-05-a-20-m-de-walmart-tienda-1-jornada-iniciada-sin-visita-todavia-cp-15-cp-18">UI-05 · A 20 m de Walmart (tienda 1): jornada iniciada, sin visita todavía (CP-15, CP-18)</h4>
+<p><img alt="UI-05" src="evidencias/UI-05_jornada_iniciada.png" /></p>
+<p><em>UI-05</em> — <code>docs/evidencias/UI-05_jornada_iniciada.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-06-check-in-independiente-en-walmart-torres-landa-cp-18">UI-06 · Check-in independiente en Walmart Torres Landa (CP-18)</h4>
+<p><img alt="UI-06" src="evidencias/UI-06_checkin.png" /></p>
+<p><em>UI-06</em> — <code>docs/evidencias/UI-06_checkin.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-07-check-out-sin-fotos-rechazo-esperado-con-categorias-faltantes-cp-21">UI-07 · Check-out sin fotos: rechazo esperado con categorías faltantes (CP-21)</h4>
+<p><img alt="UI-07" src="evidencias/UI-07_checkout_sin_fotos.png" /></p>
+<p><em>UI-07</em> — <code>docs/evidencias/UI-07_checkout_sin_fotos.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-08-foto-de-precios-a-400-m-se-guarda-pero-no-cuenta-cp-20">UI-08 · Foto de Precios a 400 m: se guarda pero NO cuenta (CP-20)</h4>
+<p><img alt="UI-08" src="evidencias/UI-08_foto_fuera_geocerca.png" /></p>
+<p><em>UI-08</em> — <code>docs/evidencias/UI-08_foto_fuera_geocerca.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-09-cuatro-categorias-validas-promociones-como-exhibicion-scribe-y-foto-rechazada-marcada">UI-09 · Cuatro categorías válidas (Promociones como exhibición Scribe) y foto rechazada marcada</h4>
+<p><img alt="UI-09" src="evidencias/UI-09_cuatro_categorias.png" /></p>
+<p><em>UI-09</em> — <code>docs/evidencias/UI-09_cuatro_categorias.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-10-check-out-valido-la-visita-se-cierra-y-la-jornada-sigue-abierta-cp-22">UI-10 · Check-out válido: la visita se cierra y la jornada sigue abierta (CP-22)</h4>
+<p><img alt="UI-10" src="evidencias/UI-10_checkout_jornada_abierta.png" /></p>
+<p><em>UI-10</em> — <code>docs/evidencias/UI-10_checkout_jornada_abierta.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-11-pausa-de-descanso-con-temporizador-seguimiento-detenido-cp-24">UI-11 · Pausa de descanso con temporizador: seguimiento detenido (CP-24)</h4>
+<p><img alt="UI-11" src="evidencias/UI-11_pausa_activa.png" /></p>
+<p><em>UI-11</em> — <code>docs/evidencias/UI-11_pausa_activa.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-12-finalizar-con-2-tiendas-sin-visitar-el-servidor-exige-motivo-cp-23">UI-12 · Finalizar con 2 tiendas sin visitar: el servidor exige motivo (CP-23)</h4>
+<p><img alt="UI-12" src="evidencias/UI-12_finalizar_con_pendientes.png" /></p>
+<p><em>UI-12</em> — <code>docs/evidencias/UI-12_finalizar_con_pendientes.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-13-jornada-finalizada-con-motivo-seguimiento-detenido-cp-23-cp-24">UI-13 · Jornada finalizada con motivo: seguimiento detenido (CP-23, CP-24)</h4>
+<p><img alt="UI-13" src="evidencias/UI-13_jornada_finalizada.png" /></p>
+<p><em>UI-13</em> — <code>docs/evidencias/UI-13_jornada_finalizada.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-14-historial-propio-del-dia-tiendas-horarios-pausas-y-fotos">UI-14 · Historial propio del día: tiendas, horarios, pausas y fotos</h4>
+<p><img alt="UI-14" src="evidencias/UI-14_historial.png" /></p>
+<p><em>UI-14</em> — <code>docs/evidencias/UI-14_historial.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-15-supervisor-estados-separados-ultima-ubicacion-y-alertas-criticas-internas">UI-15 · Supervisor: estados separados, última ubicación y alertas críticas internas</h4>
+<p><img alt="UI-15" src="evidencias/UI-15_supervisor_mapa.png" /></p>
+<p><em>UI-15</em> — <code>docs/evidencias/UI-15_supervisor_mapa.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-16-rutas-del-dia-recorrido-visitas-incidencias-y-evidencias-con-su-validacion">UI-16 · Rutas del día: recorrido, visitas, incidencias y evidencias con su validación</h4>
+<p><img alt="UI-16" src="evidencias/UI-16_supervisor_seguimiento.png" /></p>
+<p><em>UI-16</em> — <code>docs/evidencias/UI-16_supervisor_seguimiento.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-17-historial-de-incidencias-con-seguimiento-manual">UI-17 · Historial de incidencias con seguimiento manual</h4>
+<p><img alt="UI-17" src="evidencias/UI-17_incidencias.png" /></p>
+<p><em>UI-17</em> — <code>docs/evidencias/UI-17_incidencias.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-18-reporte-diario-de-exhibicion-generado-con-datos-reales-cp-26">UI-18 · Reporte diario de exhibición generado con datos reales (CP-26)</h4>
+<p><img alt="UI-18" src="evidencias/UI-18_reporte.png" /></p>
+<p><em>UI-18</em> — <code>docs/evidencias/UI-18_reporte.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-20-gestion-de-rutas-asignacion-manual-por-fecha-y-orden-advertencia-por-cantidad">UI-20 · Gestión de rutas: asignación manual por fecha y orden (advertencia por cantidad)</h4>
+<p><img alt="UI-20" src="evidencias/UI-20_asignacion.png" /></p>
+<p><em>UI-20</em> — <code>docs/evidencias/UI-20_asignacion.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-21-administrador-resumen-general-alertas-y-ultimas-actividades">UI-21 · Administrador: resumen general, alertas y últimas actividades</h4>
+<p><img alt="UI-21" src="evidencias/UI-21_admin_inicio.png" /></p>
+<p><em>UI-21</em> — <code>docs/evidencias/UI-21_admin_inicio.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-22-alta-de-usuario-vacia-mensajes-por-campo-obligatorio-cp-11">UI-22 · Alta de usuario vacía: mensajes por campo obligatorio (CP-11)</h4>
+<p><img alt="UI-22" src="evidencias/UI-22_alta_campos_obligatorios.png" /></p>
+<p><em>UI-22</em> — <code>docs/evidencias/UI-22_alta_campos_obligatorios.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-23-correo-ya-registrado-el-servidor-rechaza-el-duplicado-cp-12">UI-23 · Correo ya registrado: el servidor rechaza el duplicado (CP-12)</h4>
+<p><img alt="UI-23" src="evidencias/UI-23_alta_correo_duplicado.png" /></p>
+<p><em>UI-23</em> — <code>docs/evidencias/UI-23_alta_correo_duplicado.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-24-usuario-creado-la-contrasena-temporal-se-muestra-una-sola-vez-aqui-oculta-a-proposito">UI-24 · Usuario creado: la contraseña temporal se muestra una sola vez (aquí oculta a propósito)</h4>
+<p><img alt="UI-24" src="evidencias/UI-24_alta_usuario.png" /></p>
+<p><em>UI-24</em> — <code>docs/evidencias/UI-24_alta_usuario.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-25-alta-de-tienda-sin-coordenadas-rechazo-esperado-cp-27">UI-25 · Alta de tienda sin coordenadas: rechazo esperado (CP-27)</h4>
+<p><img alt="UI-25" src="evidencias/UI-25_tienda_sin_coordenadas.png" /></p>
+<p><em>UI-25</em> — <code>docs/evidencias/UI-25_tienda_sin_coordenadas.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-26-parametros-globales-tolerancias-20-y-30-min-separadas">UI-26 · Parámetros globales (tolerancias 20 y 30 min separadas)</h4>
+<p><img alt="UI-26" src="evidencias/UI-26_parametros.png" /></p>
+<p><em>UI-26</em> — <code>docs/evidencias/UI-26_parametros.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<h4 id="ui-27-promotor-sin-acceso-al-panel-la-ruta-redirige-y-la-api-responde-403-cp-10-cp-13">UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13)</h4>
+<p><img alt="UI-27" src="evidencias/UI-27_permisos_promotor.png" /></p>
+<p><em>UI-27</em> — <code>docs/evidencias/UI-27_permisos_promotor.png</code><br>🖥️ <strong>Origen:</strong> Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</p>
+<p><img alt="UI-19 · Primera página del PDF exportado (docs/evidencias/UI-19_reporte.pdf)" src="evidencias/UI-19_reporte_p1.png" /></p>
+<p><em>UI-19 · Primera página del PDF exportado (docs/evidencias/UI-19_reporte.pdf)</em> — <code>docs/evidencias/UI-19_reporte_p1.png</code><br>📑 <strong>Origen:</strong> Primera página del PDF exportado, convertida a imagen</p>
+<h2 id="7-las-cuatro-capturas-con-sql-server-que-estaban-pendientes">7. Las cuatro capturas con SQL Server que estaban pendientes</h2>
+<table>
+<thead>
+<tr>
+<th>Captura</th>
+<th>Pantalla</th>
+<th>Estado</th>
+<th>Archivo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UI-05</td>
+<td>Promotor → Entrada/salida con la jornada iniciada en Walmart Torres Landa</td>
+<td>Guardada automáticamente con SQL Server</td>
+<td><code>docs/evidencias/sqlserver/UI-05_jornada_iniciada.png</code></td>
+</tr>
+<tr>
+<td>UI-07</td>
+<td>Promotor → Evidencias: CHECK-OUT sin fotos (rechazo esperado)</td>
+<td>Guardada automáticamente con SQL Server</td>
+<td><code>docs/evidencias/sqlserver/UI-07_checkout_sin_fotos.png</code></td>
+</tr>
+<tr>
+<td>UI-15</td>
+<td>Supervisor → Módulo de supervisión (mapa, resumen y alertas)</td>
+<td>Guardada automáticamente con SQL Server</td>
+<td><code>docs/evidencias/sqlserver/UI-15_supervisor_mapa.png</code></td>
+</tr>
+<tr>
+<td>UI-18</td>
+<td>Supervisor → Reportes con un reporte generado</td>
+<td>Guardada automáticamente con SQL Server</td>
+<td><code>docs/evidencias/sqlserver/UI-18_reporte.png</code></td>
+</tr>
+</tbody>
+</table>
+<p>Para repetirlas a mano en Chrome contra SQL Server: abre <code>scripts\iniciar.bat</code>, entra a http://localhost:4200 y captura con <code>Win + Shift + S</code>. Guárdalas en <code>docs\evidencias\sqlserver\</code> como <code>MANUAL-UI-xx.png</code> para distinguirlas de las automáticas.</p>
+<h2 id="8-inventario-de-imagenes-y-su-origen">8. Inventario de imágenes y su origen</h2>
+<p>📄 = imagen generada a partir de un registro de texto (no es captura de pantalla) · 🖥️ = captura de pantalla real · 📑 = página de PDF convertida a imagen.</p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Origen</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docs/evidencias/CP-01_antes.png</code></td>
+<td>📄 Imagen generada a partir de un registro de texto original (no es captura de pantalla)</td>
+<td>CP-01 antes: salida original del fallo F01</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-01_despues.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-01 después: misma prueba en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-02_antes.png</code></td>
+<td>📄 Imagen generada a partir de un registro de texto original (no es captura de pantalla)</td>
+<td>CP-02 antes: salida original del fallo F02</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-02_despues.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-02 después: misma prueba en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-03_antes.png</code></td>
+<td>📄 Imagen generada a partir de un registro de texto original (no es captura de pantalla)</td>
+<td>CP-03 antes: salida original del fallo F03</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-03_despues.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-03 después: misma prueba en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-04_antes.png</code></td>
+<td>📄 Imagen generada a partir de un registro de texto original (no es captura de pantalla)</td>
+<td>CP-04 antes: salida original del fallo F04</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-04_despues.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-04 después: misma prueba en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-05_antes.png</code></td>
+<td>📄 Imagen generada a partir de un registro de texto original (no es captura de pantalla)</td>
+<td>CP-05 antes: salida original del fallo F05</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-05_despues.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-05 después: misma prueba en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-06_antes.png</code></td>
+<td>📄 Imagen generada a partir de un registro de texto original (no es captura de pantalla)</td>
+<td>CP-06 antes: salida original del fallo F06</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-06_despues.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-06 después: misma prueba en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-07_antes.png</code></td>
+<td>📄 Imagen generada a partir de un registro de texto original (no es captura de pantalla)</td>
+<td>CP-07 antes: registro original de E2E-OFF01</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-07_despues_registro.png</code></td>
+<td>📄 Imagen generada a partir de un registro de texto original (no es captura de pantalla)</td>
+<td>CP-07 después: registro original en la laptop con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-07_despues_1_sin_conexion.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>CP-07 después (repetido hoy): sin señal, check-in pendiente</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-07_despues_2_sincronizado.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>CP-07 después (repetido hoy): señal recuperada, sincronizado y validado</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-08_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-08: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-09_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-09: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-02_cuenta_inactiva.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-02 · Login de cuenta Inactiva: el servidor rechaza el acceso (CP-09) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-02_cuenta_inactiva.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-02 · Login de cuenta Inactiva: el servidor rechaza el acceso (CP-09) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-10_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-10: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-27_permisos_promotor.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-27_permisos_promotor.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-27 · Promotor sin acceso al panel: la ruta redirige y la API responde 403 (CP-10, CP-13) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-11_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-11: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-22_alta_campos_obligatorios.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-22 · Alta de usuario vacía: mensajes por campo obligatorio (CP-11) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-22_alta_campos_obligatorios.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-22 · Alta de usuario vacía: mensajes por campo obligatorio (CP-11) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-12_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-12: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-23_alta_correo_duplicado.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-23 · Correo ya registrado: el servidor rechaza el duplicado (CP-12) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-23_alta_correo_duplicado.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-23 · Correo ya registrado: el servidor rechaza el duplicado (CP-12) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-13_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-13: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-14_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-14: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-15_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-15: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-05_jornada_iniciada.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-05 · A 20 m de Walmart (tienda 1): jornada iniciada, sin visita todavía (CP-15, CP-18) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-05_jornada_iniciada.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-05 · A 20 m de Walmart (tienda 1): jornada iniciada, sin visita todavía (CP-15, CP-18) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-16_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-16: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-04_inicio_fuera_primera_tienda.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-04 · Ubicación en Soriana (tienda 2): inicio de jornada rechazado (CP-16) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-04_inicio_fuera_primera_tienda.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-04 · Ubicación en Soriana (tienda 2): inicio de jornada rechazado (CP-16) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-17_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-17: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-18_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-18: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-06_checkin.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-06 · Check-in independiente en Walmart Torres Landa (CP-18) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-06_checkin.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-06 · Check-in independiente en Walmart Torres Landa (CP-18) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-19_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-19: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-20_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-20: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-08_foto_fuera_geocerca.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-08 · Foto de Precios a 400 m: se guarda pero NO cuenta (CP-20) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-08_foto_fuera_geocerca.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-08 · Foto de Precios a 400 m: se guarda pero NO cuenta (CP-20) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-09_cuatro_categorias.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-09 · Cuatro categorías válidas (Promociones como exhibición Scribe) y foto rechazada marcada (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-09_cuatro_categorias.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-09 · Cuatro categorías válidas (Promociones como exhibición Scribe) y foto rechazada marcada (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-21_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-21: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-07_checkout_sin_fotos.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-07 · Check-out sin fotos: rechazo esperado con categorías faltantes (CP-21) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-07_checkout_sin_fotos.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-07 · Check-out sin fotos: rechazo esperado con categorías faltantes (CP-21) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-22_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-22: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-10_checkout_jornada_abierta.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-10 · Check-out válido: la visita se cierra y la jornada sigue abierta (CP-22) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-10_checkout_jornada_abierta.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-10 · Check-out válido: la visita se cierra y la jornada sigue abierta (CP-22) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-23_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-23: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-12_finalizar_con_pendientes.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-12 · Finalizar con 2 tiendas sin visitar: el servidor exige motivo (CP-23) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-12_finalizar_con_pendientes.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-12 · Finalizar con 2 tiendas sin visitar: el servidor exige motivo (CP-23) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-13_jornada_finalizada.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-13 · Jornada finalizada con motivo: seguimiento detenido (CP-23, CP-24) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-13_jornada_finalizada.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-13 · Jornada finalizada con motivo: seguimiento detenido (CP-23, CP-24) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-24_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-24: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-11_pausa_activa.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-11 · Pausa de descanso con temporizador: seguimiento detenido (CP-24) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-11_pausa_activa.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-11 · Pausa de descanso con temporizador: seguimiento detenido (CP-24) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-25_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-25: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-26_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-26: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-18_reporte.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-18 · Reporte diario de exhibición generado con datos reales (CP-26) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-18_reporte.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-18 · Reporte diario de exhibición generado con datos reales (CP-26) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-19_reporte_pdf_p1.png</code></td>
+<td>📑 Primera página del PDF exportado, convertida a imagen</td>
+<td>UI-19 · PDF descargado (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-19_reporte_p1.png</code></td>
+<td>📑 Primera página del PDF exportado, convertida a imagen</td>
+<td>UI-19 · PDF descargado (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-27_resultado.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-27: salida real en SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-25_tienda_sin_coordenadas.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-25 · Alta de tienda sin coordenadas: rechazo esperado (CP-27) (interfaz con SQL Server)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-25_tienda_sin_coordenadas.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-25 · Alta de tienda sin coordenadas: rechazo esperado (CP-27) (interfaz, SQLite de desarrollo, original)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-28_antes.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>CP-28 antes: la pantalla dice Por visitar y CHECK-IN mientras el servidor ya tiene la visita abierta</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-28_despues.png</code></td>
+<td>📄 Imagen generada a partir de la salida de texto de pytest en SQL Server (no es captura de pantalla)</td>
+<td>CP-28 después: la pantalla coincide con el servidor (En curso, sin CHECK-IN)</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/CP-28_sqlserver.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>CP-28 con SQL Server: la pantalla coincide con el servidor</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-01_login.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-01 con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-03_inicio_promotor.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-03 con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-14_historial.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-14 con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-15_supervisor_mapa.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-15 con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-16_supervisor_seguimiento.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-16 con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-17_incidencias.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-17 con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-20_asignacion.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-20 con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-21_admin_inicio.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-21 con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-24_alta_usuario.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-24 con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/UI-26_parametros.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>UI-26 con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/CP-07_despues_1_sin_conexion.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>CP-07_despues_1_sin_conexion con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/sqlserver/CP-07_despues_2_sincronizado.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQL Server ScribeTracker_Pruebas, laptop</td>
+<td>CP-07_despues_2_sincronizado con SQL Server</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-01_login.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-01</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-03_inicio_promotor.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-03</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-14_historial.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-14</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-15_supervisor_mapa.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-15</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-16_supervisor_seguimiento.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-16</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-17_incidencias.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-17</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-20_asignacion.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-20</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-21_admin_inicio.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-21</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-24_alta_usuario.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-24</td>
+</tr>
+<tr>
+<td><code>docs/evidencias/UI-26_parametros.png</code></td>
+<td>🖥️ Captura de pantalla real (Chromium automatizado) · SQLite de pruebas, desarrollo</td>
+<td>UI-26</td>
+</tr>
+</tbody>
+</table>
+<p>Total: 95 imágenes · 35 generadas a partir de texto · 58 capturas de pantalla · 2 páginas de PDF.</p></main>
+<script>document.querySelectorAll('main img').forEach(function (i) {
+  i.loading = 'lazy'; i.addEventListener('click', function () { i.classList.toggle('grande'); }); });</script>
+</body></html>
