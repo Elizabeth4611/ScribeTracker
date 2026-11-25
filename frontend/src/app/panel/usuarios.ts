@@ -36,6 +36,7 @@ interface Acceso { envio_correo: string; password_temporal?: string; aviso?: str
                 <button type="button" class="boton boton--chico" (click)="editar(u)">Editar</button>
                 <button type="button" class="boton boton--chico" (click)="cambiarEstatus(u)">{{ u.estatus === 'Activo' ? 'Desactivar' : 'Reactivar' }}</button>
                 <button type="button" class="boton boton--chico" (click)="restablecer(u)">Contraseña</button>
+                <button type="button" class="boton boton--chico boton--peligro" (click)="eliminar(u)">Eliminar</button>
               </td>
             </tr>
           } @empty { <tr><td colspan="7">Sin resultados.</td></tr> }
@@ -157,6 +158,17 @@ export class UsuariosPage implements OnInit {
     try {
       const r = await firstValueFrom(this.http.post<{ mensaje: string }>(`/api/usuarios/${u.id_usuario}/${accion}`, {}));
       this.avisos.ok(r.mensaje);
+      await this.cargar();
+    } catch (e) { this.avisos.error(mensajeError(e)); }
+  }
+
+  /** Eliminación definitiva: el servidor solo la permite si el usuario no tiene historial. */
+  async eliminar(u: Usuario) {
+    if (!confirm(`¿Eliminar definitivamente a ${u.nombre_completo}?\n\nEsto no se puede deshacer. Solo se puede eliminar a un usuario que todavía no tiene historial (jornadas, visitas, incidencias...). Si ya trabajó, usa "Desactivar".`)) return;
+    try {
+      const r = await firstValueFrom(this.http.delete<{ mensaje: string }>(`/api/usuarios/${u.id_usuario}`));
+      this.avisos.ok(r.mensaje);
+      if (this.lista().length === 1 && this.pagina > 1) this.pagina--;
       await this.cargar();
     } catch (e) { this.avisos.error(mensajeError(e)); }
   }

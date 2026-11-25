@@ -81,3 +81,13 @@ HOY = date(2026, 11, 4)
 
 def a_las(h, m=0):
     tiempo.fijar(datetime(HOY.year, HOY.month, HOY.day, h, m))
+
+
+def iniciar_jornada(client, datos, headers=None, con_foto=True, datos_foto=None):
+    """Etapa 3 · RF-01: el inicio de jornada lleva la foto de entrada (multipart)."""
+    form = {k: str(v) for k, v in datos.items()}
+    form["metadatos"] = '{"fuente": "camara"}'
+    if con_foto:
+        form["foto"] = (io.BytesIO(datos_foto if datos_foto is not None else foto()), "entrada.jpg")
+    return client.post("/api/promotor/jornada/iniciar", data=form, content_type="multipart/form-data",
+                       headers=headers or {})

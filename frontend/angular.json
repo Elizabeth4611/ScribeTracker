@@ -29,6 +29,18 @@
             ],
             "allowedCommonJsDependencies": [
               "leaflet"
+            ],
+            "assets": [
+              {
+                "glob": "sw-push.js",
+                "input": "src",
+                "output": "/"
+              },
+              {
+                "glob": "**/*",
+                "input": "src/ayuda",
+                "output": "/ayuda"
+              }
             ]
           },
           "configurations": {

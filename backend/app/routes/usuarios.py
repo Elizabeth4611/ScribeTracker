@@ -4,11 +4,12 @@ import secrets
 import string
 
 from flask import Blueprint, jsonify, request
-from sqlalchemy import func, or_
+from sqlalchemy import and_, func, or_
 
 from app.auth import error, filtro_promotores, roles_required, usuario_a_dict, usuario_actual
 from app.extensions import db
-from app.models import Asignacion, Ruta, Usuario, Visita
+from app.models import (Asignacion, Evidencia, EventoCliente, Incidencia, Jornada, Reporte, Ruta, RutaTienda,
+                        SolicitudAjuste, SuscripcionPush, Ubicacion, Usuario, Visita)
 from app.models.usuario import ROLES
 from app.servicios.correo import enviar_credenciales
 from app.servicios.tiempo import ahora, hoy
@@ -267,3 +268,59 @@ def restablecer_password(id_usuario):
         acceso["password_temporal"] = temporal
         acceso["aviso"] = "Entrega esta contraseña temporal al usuario; se muestra una sola vez."
     return jsonify(mensaje="Contraseña temporal generada.", acceso=acceso)
+
+
+def _historial(u: Usuario) -> list[str]:
+    """Lo que el usuario ya registró o revisó en el sistema. Si hay algo, no
+    se elimina (se usaría Desactivar) para no alterar reportes ni evidencias."""
+    uid = u.id_usuario
+
+    def contar(modelo, *condiciones):
+        return db.session.execute(db.select(func.count()).select_from(modelo).where(or_(*condiciones))).scalar_one()
+
+    partes = [
+        ("jornada(s)", contar(Jornada, Jornada.id_promotor == uid)),
+        ("visita(s)", contar(Visita, Visita.id_promotor == uid)),
+        ("ubicación(es) enviadas", contar(Ubicacion, Ubicacion.id_promotor == uid)),
+        ("incidencia(s)", contar(Incidencia, Incidencia.id_promotor == uid, Incidencia.id_reporto == uid,
+                                 Incidencia.id_revisor == uid)),
+        ("fotografía(s) revisadas", contar(Evidencia, Evidencia.id_revisor == uid)),
+        ("solicitud(es) de ajuste", contar(SolicitudAjuste, SolicitudAjuste.id_promotor == uid,
+                                           SolicitudAjuste.id_revisor == uid)),
+        ("reporte(s)", contar(Reporte, Reporte.id_promotor == uid, Reporte.id_generado_por == uid)),
+        ("promotor(es) a su cargo", contar(Usuario, Usuario.id_supervisor == uid)),
+        ("ruta(s) o asignación(es) que creó para otros promotores",
+         contar(Ruta, and_(Ruta.id_creado_por == uid, Ruta.id_promotor != uid))
+         + contar(Asignacion, and_(Asignacion.id_asignado_por == uid, Asignacion.id_promotor != uid))),
+    ]
+    return [f"{n} {texto}" for texto, n in partes if n]
+
+
+@bp.delete("/<int:id_usuario>")
+@roles_required("Administrador")
+def eliminar(id_usuario):
+    """Eliminación definitiva, solo para usuarios sin historial (por ejemplo,
+    dados de alta por error). Con historial se usa Desactivar (baja lógica)."""
+    yo = usuario_actual()
+    u = db.session.get(Usuario, id_usuario)
+    if u is None:
+        return error("Usuario no encontrado.", 404)
+    if u.id_usuario == yo.id_usuario:
+        return error("No puedes eliminar tu propia cuenta.", 409)
+    historial = _historial(u)
+    if historial:
+        return error("No se puede eliminar porque ya tiene historial en el sistema: " + ", ".join(historial)
+                     + ". Usa «Desactivar» para quitarle el acceso sin perder ese historial.", 409,
+                     historial=historial)
+    # Sin historial solo pueden quedar rutas/asignaciones pendientes del propio
+    # promotor y datos técnicos (suscripciones push, eventos de sincronización).
+    rutas = db.select(Ruta.id_ruta).where(Ruta.id_promotor == u.id_usuario)
+    db.session.execute(db.delete(Asignacion).where(Asignacion.id_promotor == u.id_usuario))
+    db.session.execute(db.delete(RutaTienda).where(RutaTienda.id_ruta.in_(rutas)))
+    db.session.execute(db.delete(Ruta).where(Ruta.id_promotor == u.id_usuario))
+    db.session.execute(db.delete(SuscripcionPush).where(SuscripcionPush.id_usuario == u.id_usuario))
+    db.session.execute(db.delete(EventoCliente).where(EventoCliente.id_usuario == u.id_usuario))
+    nombre = u.nombre_completo
+    db.session.delete(u)
+    db.session.commit()
+    return jsonify(mensaje=f"Usuario «{nombre}» eliminado definitivamente.")

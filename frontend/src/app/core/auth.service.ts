@@ -40,8 +40,8 @@ export class AuthService {
     return this.consultaEnCurso;
   }
 
-  async iniciarSesion(correo: string, password: string): Promise<Usuario> {
-    const r = await firstValueFrom(this.http.post<{ usuario: Usuario }>('/api/auth/login', { correo, password }));
+  async iniciarSesion(usuario: string, password: string): Promise<Usuario> {
+    const r = await firstValueFrom(this.http.post<{ usuario: Usuario }>('/api/auth/login', { usuario, password }));
     this.establecer(r.usuario);
     return r.usuario;
   }

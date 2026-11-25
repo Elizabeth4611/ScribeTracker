@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import current_app, Blueprint, jsonify
 from sqlalchemy import text
 
 from app.extensions import db
@@ -17,5 +17,7 @@ def health():
         ).one()
         return jsonify(status="ok", database=row.db, sql_server_version=row.ver)
     except Exception as exc:
-        # No devolvemos el mensaje completo: puede incluir datos del servidor.
+        # No devolvemos el mensaje completo: puede incluir datos del servidor
+        # (solo queda en el registro del servidor, para diagnosticar).
+        current_app.logger.warning("health: %s", str(exc).splitlines()[0][:300])
         return jsonify(status="error", detail=type(exc).__name__), 503

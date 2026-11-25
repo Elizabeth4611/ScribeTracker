@@ -9,11 +9,10 @@ backend/.venv/
 .env.*
 *.env
 !.env.example
-*_respaldo/
 *.pem
 *.key
 
-# Configuración local y datos
+# Datos locales, respaldos y bitácoras
 backend/instance/
 *.bak
 scripts/logs/
@@ -22,3 +21,10 @@ scripts/logs/
 frontend/node_modules/
 frontend/dist/
 frontend/.angular/
+
+# Paquetes que se generan aparte
+entrega/
+despliegue/azure/*.zip
+
+# Evidencias de pruebas: van en el documento de pruebas, no en el repositorio
+docs/

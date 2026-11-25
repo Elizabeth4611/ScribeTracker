@@ -32,12 +32,14 @@ def evaluar(fecha, ids_promotores: list[int]) -> int:
     ventana = timedelta(minutes=parametros.valor("inactividad_min"))
     radio = parametros.valor("inactividad_radio_m")
 
+    from app.servicios.lote import Contexto
+    ctx = Contexto(ids_promotores, fecha)   # F13: carga en lote
     for p in db.session.execute(db.select(Usuario).where(
             Usuario.id_usuario.in_(ids_promotores), Usuario.estatus == "Activo")).scalars():
-        asignaciones = op.asignaciones_del_dia(p.id_usuario, fecha)
+        asignaciones = ctx.asignaciones.get(p.id_usuario, [])
         if not asignaciones:
             continue
-        j = op.jornada_de(p.id_usuario, fecha)
+        j = ctx.jornadas.get(p.id_usuario)
         if t > limite_llegada and j is None:
             primera = asignaciones[0].tienda
             if op.registrar_incidencia(
@@ -45,7 +47,7 @@ def evaluar(fecha, ids_promotores: list[int]) -> int:
                     f"A las {limite_llegada:%H:%M} no había iniciado jornada en {primera.nombre_comercial} {primera.sucursal}.",
                     critica=True, clave=f"sinllegada:{p.id_usuario}:{fecha.isoformat()}"):
                 n += 1
-        if j is None or j.estado != "Abierta" or op.pausa_activa(j) or op.visita_abierta(p.id_usuario):
+        if j is None or j.estado != "Abierta" or j.id_jornada in ctx.pausa_activa or p.id_usuario in ctx.visita_abierta:
             continue
         # Desde cuándo está fuera de tienda y sin pausa
         ultimo_hito = max([j.fecha_hora_inicio] + [v.fecha_hora_checkout for v in j.visitas if v.fecha_hora_checkout]

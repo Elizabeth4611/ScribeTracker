@@ -31,13 +31,13 @@ def test_correo_sin_distinguir_mayusculas_ni_espacios(client):
 def test_contrasena_incorrecta(client):
     r = login(client, "promotor@test.mx", "otra-cosa")
     assert r.status_code == 401
-    assert r.get_json()["error"] == "Correo o contraseña incorrectos."
+    assert r.get_json()["error"] == "Usuario o contraseña incorrectos."
 
 
 def test_correo_inexistente_mismo_mensaje(client):
     r = login(client, "nadie@test.mx")
     assert r.status_code == 401
-    assert r.get_json()["error"] == "Correo o contraseña incorrectos."
+    assert r.get_json()["error"] == "Usuario o contraseña incorrectos."
 
 
 def test_campos_vacios(client):

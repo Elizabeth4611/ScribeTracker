@@ -162,18 +162,23 @@ def test_U10_contrasena_temporal_obliga_cambio(app, esc, obs):
 
 
 def test_U11_intentos_fallidos_se_registran(app, esc, obs):
-    """U11 · Registro de intentos fallidos (política de bloqueo pendiente)
-    RF: RNF-01 inicio de sesión con bloqueo tras 3 intentos (duración PENDIENTE)
+    """U11 · Bloqueo tras 3 intentos fallidos (actualizada en la etapa 3)
+    RF: RNF-01 inicio de sesión con bloqueo tras 3 intentos; duración definida: 15 min
     Tipo: inválido
     Pre: usuario P2 activo
-    Entrada: 3 contraseñas incorrectas y luego la correcta
-    Esperado: se cuentan 3 intentos; la cuenta NO se bloquea porque la duración no está definida; el contador vuelve a 0
+    Entrada: 3 contraseñas incorrectas, la correcta enseguida y la correcta 15 min después
+    Esperado: 401, 401 y 423 (bloqueada); la correcta durante el bloqueo también da 423; a los 15 min entra y el contador vuelve a 0
     """
+    from datetime import timedelta
+    from app.servicios import tiempo
     c = app.test_client()
-    for _ in range(3):
-        assert c.post("/api/auth/login", json={"correo": "p2@test.mx", "password": "mala"}).status_code == 401
+    codigos = [c.post("/api/auth/login", json={"correo": "p2@test.mx", "password": "mala"}).status_code
+               for _ in range(3)]
+    assert codigos == [401, 401, 423]
     with app.app_context():
         assert db.session.get(Usuario, esc.ids.p2).intentos_fallidos == 3
+    assert c.post("/api/auth/login", json={"correo": "p2@test.mx", "password": "Prueba-1234"}).status_code == 423
+    tiempo.fijar(tiempo.ahora() + timedelta(minutes=15))
     r = obs(c.post("/api/auth/login", json={"correo": "p2@test.mx", "password": "Prueba-1234"}))
     assert r.status_code == 200
     with app.app_context():
@@ -195,3 +200,81 @@ def test_U12_parametros_globales(app, esc, obs):
     assert c.put("/api/parametros/gps_intervalo_min", json={"valor": "99"}).status_code == 400
     assert c.post("/api/parametros/gps_intervalo_min/restablecer").get_json()["parametro"]["valor_activo"] == "10"
     assert cliente(app, "s1@test.mx").put("/api/parametros/gps_intervalo_min", json={"valor": "5"}).status_code == 403
+
+
+def test_U15_eliminar_usuario_sin_historial(app, esc, obs):
+    """U15 · Eliminar un usuario dado de alta por error (sin historial)
+    RF: Gestión de usuarios (etapa 3, solicitado por el equipo)
+    Tipo: válido
+    Pre: sesión de Administrador; se da de alta un promotor nuevo que nunca trabajó
+    Entrada: DELETE /api/usuarios/<id>
+    Esperado: HTTP 200 y el usuario ya no existe en la base
+    """
+    c = cliente(app, "admin@test.mx")
+    nuevo = c.post("/api/usuarios", json={**NUEVO, "id_supervisor": esc.ids.s1}).get_json()["usuario"]["id_usuario"]
+    r = obs(c.delete(f"/api/usuarios/{nuevo}"))
+    assert r.status_code == 200 and "eliminado" in r.get_json()["mensaje"]
+    with app.app_context():
+        assert db.session.get(Usuario, nuevo) is None
+
+
+def test_U16_eliminar_promotor_con_asignaciones_pendientes(app, esc, obs):
+    """U16 · Un promotor solo con tiendas asignadas (sin jornadas) se puede eliminar
+    Tipo: válido
+    Pre: P1 tiene asignaciones para hoy pero no ha iniciado jornada
+    Entrada: DELETE /api/usuarios/<P1>
+    Esperado: HTTP 200; se borran también sus asignaciones pendientes
+    """
+    c = cliente(app, "admin@test.mx")
+    r = obs(c.delete(f"/api/usuarios/{esc.ids.p1}"))
+    assert r.status_code == 200
+    with app.app_context():
+        assert db.session.get(Usuario, esc.ids.p1) is None
+        assert db.session.execute(db.select(Asignacion).where(Asignacion.id_promotor == esc.ids.p1)).first() is None
+
+
+def test_U17_no_eliminar_con_historial(app, esc, obs):
+    """U17 · No se elimina a quien ya tiene historial; se sugiere Desactivar
+    Tipo: inválido
+    Pre: P1 ya inició una jornada; S1 tiene promotores a cargo
+    Entrada: DELETE /api/usuarios/<P1> y DELETE /api/usuarios/<S1>
+    Esperado: HTTP 409 con el historial encontrado; los dos siguen en la base
+    """
+    from tests.escenario import iniciar_jornada, punto
+    assert iniciar_jornada(cliente(app, "p1@test.mx"), punto(esc.coords[0], 10)).status_code == 201
+    c = cliente(app, "admin@test.mx")
+    r = obs(c.delete(f"/api/usuarios/{esc.ids.p1}"))
+    assert r.status_code == 409
+    assert "jornada" in r.get_json()["error"] and "Desactivar" in r.get_json()["error"]
+    r2 = c.delete(f"/api/usuarios/{esc.ids.s1}")
+    assert r2.status_code == 409 and "a su cargo" in r2.get_json()["error"]
+    with app.app_context():
+        assert db.session.get(Usuario, esc.ids.p1) is not None and db.session.get(Usuario, esc.ids.s1) is not None
+
+
+def test_U18_eliminar_permisos(app, esc, obs):
+    """U18 · Solo el administrador elimina, y no a sí mismo
+    Tipo: inválido
+    Entrada: DELETE como supervisor; DELETE de la propia cuenta del administrador
+    Esperado: 403 para el supervisor; 409 para la propia cuenta
+    """
+    assert obs(cliente(app, "s1@test.mx").delete(f"/api/usuarios/{esc.ids.p3}")).status_code == 403
+    c = cliente(app, "admin@test.mx")
+    with app.app_context():
+        yo = db.session.execute(db.select(Usuario).where(Usuario.correo_electronico == "admin@test.mx")).scalar_one().id_usuario
+    assert c.delete(f"/api/usuarios/{yo}").status_code == 409
+
+
+def test_U19_parametros_en_lenguaje_sencillo(app, esc, obs):
+    """U19 · La pantalla de parámetros no muestra códigos de requisitos
+    Tipo: válido
+    Entrada: GET /api/parametros como administrador
+    Esperado: cada parámetro trae nombre, explicación y unidad; ningún texto contiene «RF-» o «RNF-»;
+    vienen agrupados empezando por Jornada
+    """
+    r = obs(cliente(app, "admin@test.mx").get("/api/parametros"))
+    ps = r.get_json()["parametros"]
+    assert ps and ps[0]["categoria"] == "Jornada"
+    for p in ps:
+        assert p["descripcion"] and p["ayuda"] and p["unidad"]
+        assert "RF-" not in p["descripcion"] + p["ayuda"] and "RNF" not in p["descripcion"] + p["ayuda"]

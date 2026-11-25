@@ -45,8 +45,7 @@ import { SelectorPromotor } from './selector-promotor';
             <tr>
               <td>Reporte {{ r.contenido.toLowerCase() }} · {{ r.tipo }}</td><td>{{ r.desde }} – {{ r.hasta }}</td><td>{{ r.promotor }}</td>
               <td>{{ r.fecha_generacion.replace('T', ' ').slice(0, 16) }}<br /><small>{{ r.generado_por }}</small></td>
-              <td><a class="boton boton--chico" [href]="'/api/reportes/' + r.id_reporte + '/pdf'">PDF</a>
-                <button type="button" class="boton boton--chico" disabled title="Excel no forma parte de RF-16; ver matriz de requisitos">EXCEL</button></td>
+              <td><a class="boton boton--chico" [href]="'/api/reportes/' + r.id_reporte + '/pdf'">PDF</a></td>
             </tr>
           } @empty { <tr><td colspan="5">No hay reportes disponibles.</td></tr> }
         </tbody>

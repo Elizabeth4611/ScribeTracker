@@ -2,12 +2,14 @@
 historial y perfil. Cada acción acepta el encabezado X-Id-Cliente para
 que los reintentos y la sincronización sin conexión no dupliquen registros.
 """
+import json
+import os
 from datetime import date, timedelta
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request, send_file
 from sqlalchemy import func
 
-from app.auth import error, idempotente, roles_required, usuario_actual
+from app.auth import error, idempotente, puede_ver_promotor, roles_required, usuario_actual
 from app.extensions import db
 from app.models import Asignacion, Evidencia, Incidencia, Jornada, Ruta, RutaTienda, Visita
 from app.routes.tiendas import tienda_a_dict
@@ -23,7 +25,10 @@ def _regla(e: op.ReglaError):
 
 
 def _datos():
-    return request.get_json(silent=True) or {}
+    # JSON o, si viene una foto (inicio de jornada), formulario multipart.
+    if request.is_json:
+        return request.get_json(silent=True) or {}
+    return request.form
 
 
 def evidencia_a_dict(e: Evidencia) -> dict:
@@ -68,6 +73,7 @@ def jornada_a_dict(j: Jornada | None) -> dict | None:
         "inicio": j.fecha_hora_inicio.isoformat(), "fin": j.fecha_hora_fin.isoformat() if j.fecha_hora_fin else None,
         "distancia_inicio_m": j.distancia_inicio_m, "cierre_forzado": bool(j.cierre_forzado),
         "motivo_cierre": j.motivo_cierre, "origen": j.origen,
+        "foto_inicio_url": f"/api/promotor/jornadas/{j.id_jornada}/foto" if j.foto_inicio_ruta else None,
         "pausas": [{
             "id_pausa": p.id_pausa, "tipo": p.tipo, "inicio": p.fecha_hora_inicio.isoformat(),
             "fin": p.fecha_hora_fin.isoformat() if p.fecha_hora_fin else None,
@@ -127,13 +133,32 @@ def hoy_promotor():
 @roles_required("Promotor")
 @idempotente("jornada_iniciar")
 def iniciar_jornada():
+    """RF-01: el promotor inicia su jornada con su ubicación y una foto de
+    entrada tomada con la cámara (modelo de diseño, etapa 3)."""
     d = _datos()
     try:
         lat, lon, prec = op.leer_ubicacion(d)
-        j = op.iniciar_jornada(usuario_actual(), lat, lon, prec, op.leer_captura(d))
+        j = op.iniciar_jornada(usuario_actual(), lat, lon, prec, op.leer_captura(d),
+                               foto=request.files.get("foto"), metadatos_foto=d.get("metadatos"))
     except op.ReglaError as e:
         return _regla(e)
-    return jsonify(mensaje="Jornada iniciada. El seguimiento de ubicación está activo.", jornada=jornada_a_dict(j)), 201
+    return jsonify(mensaje="Jornada iniciada correctamente. El seguimiento de ubicación está activo.",
+                   jornada=jornada_a_dict(j)), 201
+
+
+@bp.get("/jornadas/<int:id_jornada>/foto")
+@roles_required("Promotor", "Supervisor", "Administrador")
+def foto_jornada(id_jornada):
+    j = db.session.get(Jornada, id_jornada)
+    if j is None or not j.foto_inicio_ruta or not puede_ver_promotor(usuario_actual(), j.id_promotor):
+        return error("Foto no encontrada.", 404)
+    ruta = os.path.join(current_app.config["EVIDENCIAS_DIR"], j.foto_inicio_ruta)
+    if not os.path.isfile(ruta):
+        return error("El archivo de la foto no está disponible.", 404)
+    tipo = (json.loads(j.foto_inicio_metadatos or "{}").get("tipo")) or "image/jpeg"
+    resp = send_file(ruta, mimetype=tipo, max_age=0)
+    resp.headers["Cache-Control"] = "private, no-store"
+    return resp
 
 
 @bp.post("/jornada/finalizar")

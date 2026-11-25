@@ -1,4 +1,4 @@
-"""Parámetros globales (ERS 3.1, portal del administrador, punto 7)."""
+"""Parámetros globales: las reglas del sistema que el administrador puede ajustar."""
 from flask import Blueprint, jsonify, request
 
 from app.auth import error, roles_required
@@ -11,11 +11,22 @@ bp = Blueprint("parametros", __name__, url_prefix="/api/parametros")
 
 
 def _dict(p: Parametro) -> dict:
+    # El nombre, la categoría y la explicación salen del código (no de la base)
+    # para que se vean en lenguaje sencillo aunque la base se haya sembrado antes.
+    nombre, _, _, rango, categoria = svc.DEFINICIONES.get(p.clave, (p.descripcion, None, None, p.rango, p.categoria))
+    ayuda, unidad = svc.AYUDA.get(p.clave, ("", ""))
     return {
-        "clave": p.clave, "descripcion": p.descripcion, "tipo_dato": p.tipo_dato,
-        "valor_activo": p.valor_activo, "valor_default": p.valor_default, "rango": p.rango,
-        "categoria": p.categoria, "fecha_modificacion": p.fecha_modificacion.isoformat(),
+        "clave": p.clave, "descripcion": nombre, "ayuda": ayuda, "unidad": unidad, "tipo_dato": p.tipo_dato,
+        "valor_activo": p.valor_activo, "valor_default": p.valor_default, "rango": rango,
+        "categoria": categoria, "fecha_modificacion": p.fecha_modificacion.isoformat(),
     }
+
+
+def _orden(d: dict):
+    cats = svc.ORDEN_CATEGORIAS
+    claves = list(svc.DEFINICIONES)
+    return (cats.index(d["categoria"]) if d["categoria"] in cats else len(cats),
+            claves.index(d["clave"]) if d["clave"] in claves else len(claves))
 
 
 @bp.get("")
@@ -23,10 +34,12 @@ def _dict(p: Parametro) -> dict:
 def listar():
     svc.sembrar()
     q = (request.args.get("q") or "").strip().lower()
-    filas = db.session.execute(db.select(Parametro).order_by(Parametro.categoria, Parametro.clave)).scalars().all()
+    filas = [_dict(p) for p in db.session.execute(db.select(Parametro)).scalars().all()
+             if p.clave in svc.DEFINICIONES]
     if q:
-        filas = [p for p in filas if q in p.clave.lower() or q in p.descripcion.lower()]
-    return jsonify(parametros=[_dict(p) for p in filas])
+        filas = [d for d in filas if q in d["descripcion"].lower() or q in d["ayuda"].lower()
+                 or q in d["categoria"].lower()]
+    return jsonify(parametros=sorted(filas, key=_orden))
 
 
 @bp.put("/<clave>")
@@ -42,6 +55,7 @@ def editar(clave):
         return error(str(e), 400)
     p = db.session.execute(db.select(Parametro).where(Parametro.clave == clave)).scalar_one()
     p.valor_activo = nuevo
+    svc.olvidar_cache()
     p.fecha_modificacion = ahora()
     db.session.commit()
     return jsonify(mensaje="Parámetro actualizado.", parametro=_dict(p))
@@ -55,6 +69,7 @@ def restablecer(clave):
     svc.sembrar()
     p = db.session.execute(db.select(Parametro).where(Parametro.clave == clave)).scalar_one()
     p.valor_activo = p.valor_default
+    svc.olvidar_cache()
     p.fecha_modificacion = ahora()
     db.session.commit()
     return jsonify(mensaje="Parámetro restablecido a su valor por defecto.", parametro=_dict(p))

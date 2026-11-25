@@ -53,7 +53,8 @@ import { MapaComponent, MarcadorMapa } from '../shared/mapa.component';
           <label>{{ c[1] }} <input [(ngModel)]="f[c[0]]" /></label>
           @if (campos()[c[0]]) { <small class="error-campo">{{ campos()[c[0]] }}</small> }
         }
-        <p>Coordenadas GPS (haz clic en el mapa para tomarlas):</p>
+        <p>Coordenadas GPS (haz clic en el mapa o, si estás en la tienda, usa tu ubicación):</p>
+        <button type="button" class="boton" (click)="usarMiUbicacion()">📍 USAR MI UBICACIÓN</button>
         <div class="fila-2">
           <label>Latitud <input [(ngModel)]="f.latitud" inputmode="decimal" (change)="refrescar()" /></label>
           <label>Longitud <input [(ngModel)]="f.longitud" inputmode="decimal" (change)="refrescar()" /></label>
@@ -140,6 +141,21 @@ export class TiendasPage implements OnInit {
   }
 
   refrescar() { this.version.update((v) => v + 1); }
+
+  /** Toma las coordenadas del GPS del dispositivo (útil al dar de alta la tienda estando en ella). */
+  usarMiUbicacion() {
+    if (!('geolocation' in navigator)) { this.avisos.error('Este navegador no permite obtener la ubicación.'); return; }
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        this.f.latitud = p.coords.latitude.toFixed(6);
+        this.f.longitud = p.coords.longitude.toFixed(6);
+        this.refrescar();
+        this.avisos.ok(`Ubicación tomada (precisión ±${Math.round(p.coords.accuracy)} m).`);
+      },
+      () => this.avisos.error('No se pudo obtener tu ubicación. Revisa que el permiso de ubicación esté activado.'),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
+    );
+  }
 
   async guardar() {
     try {

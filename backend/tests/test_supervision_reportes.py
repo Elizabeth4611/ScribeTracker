@@ -7,14 +7,15 @@ from datetime import datetime
 from app.extensions import db
 from app.models import Evidencia, Incidencia, Jornada, Ubicacion, Visita
 from tests.conftest import cliente
-from tests.escenario import a_las, punto, subir_foto
+from tests.escenario import iniciar_jornada, a_las, punto, subir_foto
 
-CATS = ["Anaquel antes", "Anaquel después", "Precios", "Promociones"]
+from app.models.operacion import CATEGORIAS as _CATS  # etapa 3: seis categorías
+CATS = list(_CATS)
 
 
 def _jornada_con_visita(app, esc, cerrar=True):
     c = cliente(app, "p1@test.mx")
-    c.post("/api/promotor/jornada/iniciar", json=punto(esc.coords[0], 10))
+    iniciar_jornada(c, punto(esc.coords[0], 10))
     a = c.get("/api/promotor/hoy").get_json()["asignaciones"][0]
     a_las(8, 10)
     idv = c.post("/api/promotor/visitas/checkin",
@@ -36,7 +37,7 @@ def test_O01_reintento_sin_duplicados(app, esc, obs):
     Esperado: misma respuesta (201) marcada "repetido"; 1 visita y 1 evidencia en la base
     """
     c = cliente(app, "p1@test.mx")
-    c.post("/api/promotor/jornada/iniciar", json=punto(esc.coords[0], 10))
+    iniciar_jornada(c, punto(esc.coords[0], 10))
     a = c.get("/api/promotor/hoy").get_json()["asignaciones"][0]
     cab = {"X-Id-Cliente": str(uuid.uuid4())}
     cuerpos = [c.post("/api/promotor/visitas/checkin", json={"id_asignacion": a["id_asignacion"],
@@ -66,7 +67,7 @@ def test_O02_sincronizacion_respeta_hora_de_captura(app, esc, obs):
     a = c.get("/api/promotor/hoy").get_json()["asignaciones"][0]
     a_las(10, 0)
     off = {"X-Origen": "sin-conexion"}
-    r = c.post("/api/promotor/jornada/iniciar", json={**punto(esc.coords[0]), "capturado_en": "2026-11-04T08:05:00"},
+    r = iniciar_jornada(c, {**punto(esc.coords[0]), "capturado_en": "2026-11-04T08:05:00"},
                headers={**off, "X-Id-Cliente": str(uuid.uuid4())})
     assert r.status_code == 201
     id_ci = str(uuid.uuid4())
@@ -99,7 +100,7 @@ def test_O03_evento_offline_invalido_se_rechaza(app, esc, obs):
     Esperado: (a) 409 radio permitido; (b) 400 "hora del dispositivo está adelantada"
     """
     c = cliente(app, "p1@test.mx")
-    c.post("/api/promotor/jornada/iniciar", json=punto(esc.coords[0]))
+    iniciar_jornada(c, punto(esc.coords[0]))
     a = c.get("/api/promotor/hoy").get_json()["asignaciones"][0]
     r = obs(c.post("/api/promotor/visitas/checkin", json={"id_asignacion": a["id_asignacion"], **punto(esc.coords[0], 500),
                                                           "capturado_en": "2026-11-04T08:06:00"},
@@ -118,7 +119,7 @@ def test_O04_ubicacion_capturada_en_pausa_no_se_guarda(app, esc, obs):
     Esperado: HTTP 409 "suspendido durante la pausa"; no se guarda
     """
     c = cliente(app, "p1@test.mx")
-    c.post("/api/promotor/jornada/iniciar", json=punto(esc.coords[0]))
+    iniciar_jornada(c, punto(esc.coords[0]))
     a_las(9, 0)
     c.post("/api/promotor/pausas/iniciar", json={"tipo": "Descanso"})
     a_las(9, 20)
@@ -164,7 +165,7 @@ def test_S02_ubicacion_desactualizada(app, esc, obs):
     Esperado: 08:20 "Reciente"; 08:40 "Desactualizada" y cuenta como desconectado
     """
     c = cliente(app, "p1@test.mx")
-    c.post("/api/promotor/jornada/iniciar", json=punto(esc.coords[0]))
+    iniciar_jornada(c, punto(esc.coords[0]))
     s1 = cliente(app, "s1@test.mx")
     a_las(8, 20)
     # Corrección F05: la lista viene ordenada por nombre (Julieta antes que
@@ -227,7 +228,7 @@ def test_I03_seguimiento_de_incidencias(app, esc, obs):
     Esperado: S1 ve 1 incidencia y la actualiza (200); S2 recibe 404
     """
     c = cliente(app, "p1@test.mx")
-    c.post("/api/promotor/jornada/iniciar", json=punto(esc.coords[0]))
+    iniciar_jornada(c, punto(esc.coords[0]))
     a = c.get("/api/promotor/hoy").get_json()["asignaciones"][0]
     idv = c.post("/api/promotor/visitas/checkin", json={"id_asignacion": a["id_asignacion"],
                                                         **punto(esc.coords[0])}).get_json()["visita"]["id_visita"]
@@ -258,7 +259,7 @@ def test_S03_historial_ubicaciones_y_evidencias(app, esc, obs):
     horas = [u["fecha_hora"][11:16] for u in r.get_json()["ubicaciones"]]
     assert horas == ["08:05", "10:00", "11:00"]
     vs = s1.get(f"/api/supervision/visitas?id_promotor={esc.ids.p1}&desde=2026-11-04").get_json()["visitas"]
-    assert len(vs) == 1 and len([e for e in vs[0]["evidencias"] if e["estatus_validacion"] == "Válida"]) == 4
+    assert len(vs) == 1 and len([e for e in vs[0]["evidencias"] if e["estatus_validacion"] == "Válida"]) == len(CATS)
     assert cliente(app, "s2@test.mx").get(f"/api/supervision/seguimiento?id_promotor={esc.ids.p1}").status_code == 404
 
 
@@ -279,7 +280,7 @@ def test_REP01_reporte_consistente_con_registros(app, esc, obs):
     assert r.status_code == 201
     m = r.get_json()["metricas"]["promotores"][0]
     assert (m["tiendas_asignadas"], m["tiendas_visitadas"], m["cumplimiento_pct"]) == (2, 1, 50.0)
-    assert m["tiempo_promedio_tienda_min"] == 90 and (m["fotos_validas"], m["fotos_total"]) == (4, 5)
+    assert m["tiempo_promedio_tienda_min"] == 90 and (m["fotos_validas"], m["fotos_total"]) == (len(CATS), len(CATS) + 1)
     with app.app_context():
         assert m["incidencias_total"] == db.session.execute(db.select(db.func.count()).select_from(Incidencia).where(
             Incidencia.id_promotor == esc.ids.p1)).scalar_one() == 1
@@ -337,11 +338,11 @@ def test_REP04_pdf_incluye_fotos_reales(app, esc, obs):
         return b.getvalue()
 
     c = cliente(app, "p1@test.mx")
-    c.post("/api/promotor/jornada/iniciar", json=punto(esc.coords[0], 10))
+    iniciar_jornada(c, punto(esc.coords[0], 10))
     a = c.get("/api/promotor/hoy").get_json()["asignaciones"][0]
     idv = c.post("/api/promotor/visitas/checkin",
                  json={"id_asignacion": a["id_asignacion"], **punto(esc.coords[0], 5)}).get_json()["visita"]["id_visita"]
-    for cat, color in zip(CATS, ("red", "green", "blue", "yellow")):
+    for cat, color in zip(CATS, ("red", "green", "blue", "yellow", "purple", "orange")):
         assert subir_foto(c, idv, cat, punto(esc.coords[0], 5), datos=jpeg(color)).status_code == 201
     a_las(9, 0)
     c.post("/api/promotor/visitas/checkout", json={"id_visita": idv, **punto(esc.coords[0], 5)})
@@ -351,4 +352,4 @@ def test_REP04_pdf_incluye_fotos_reales(app, esc, obs):
     pdf = s1.get(f"/api/reportes/{idr}/pdf")
     imagenes = pdf.data.count(b"/Subtype /Image")
     obs(pdf, extra=f"{len(pdf.data)} bytes, {imagenes} imágenes incrustadas")
-    assert pdf.status_code == 200 and imagenes == 4
+    assert pdf.status_code == 200 and imagenes == len(CATS)

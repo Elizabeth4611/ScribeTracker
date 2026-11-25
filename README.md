@@ -1,67 +1,82 @@
 # ScribeTracker
 
-Monitoreo de jornadas de promotoría para Scribe (Bio Pappel).
-- **Backend:** Python 3.13, Flask, SQLAlchemy y SQL Server.
-- **Frontend:** Angular 21, con vista móvil del promotor y panel web de supervisión y administración.
+Sistema web para monitorear las jornadas de los promotores de **Scribe (Bio Pappel)** en las tiendas.
 
-- Estado actual y siguiente paso: [`docs/ESTADO_PROYECTO.md`](docs/ESTADO_PROYECTO.md)
-- Requisitos, decisiones y límites: [`docs/MATRIZ_REQUISITOS.md`](docs/MATRIZ_REQUISITOS.md)
-- Registro de pruebas para la docente: [`docs/pruebas/`](docs/pruebas/)
-- **Reporte de pruebas con imágenes:** [`docs/REPORTE_PRUEBAS.md`](docs/REPORTE_PRUEBAS.md) (evidencias en `docs/evidencias/`)
+- **Sistema publicado:** https://scribetracker.azurewebsites.net
+- **Proyecto de:** Ingeniería de Software · Instituto Tecnológico de León · Docente: Ruth Saez de Nanclares
+- **Equipo:** Ramos Infante Esmeralda Elizabeth · Faire Mariche Siomara Mabel · García Castillo Jorge Paolo
 
-## Instalación (Windows, primera vez)
+## Qué hace
 
-Requisitos: Python 3.13, Node.js 20.19+, 22.12+ o 24+, SQL Server con ODBC Driver 18 y autenticación de Windows.
-
-1. `backend\.env` (no se sube a Git) con `DB_SERVER`, `DB_NAME`, `DB_DRIVER` y `SECRET_KEY`. Usa `backend\.env.example` como guía.
-2. Abre `scripts\etapa2_bd.bat` con doble clic. Este script:
-   - instala las dependencias de Python (incluido reportlab para los PDF);
-   - **respalda** la base de datos;
-   - aplica las migraciones;
-   - crea la base separada `ScribeTracker_Pruebas` y corre las pruebas.
-
-   Resultado en `scripts\logs\etapa2_bd.log`.
-3. Abre `scripts\construir_frontend.bat`. Instala las dependencias de Angular (incluido Leaflet para los mapas) y compila. Resultado en `scripts\logs\frontend.log`.
-
-Para migrar a mano: en `backend`, `.venv\Scripts\activate` y `flask --app app db upgrade`.
-
-## Ejecución
-
-Abre `scripts\iniciar.bat`. Detiene las instancias anteriores y abre dos ventanas: Flask en `http://127.0.0.1:5000` y Angular en `http://localhost:4200`. Abre **http://localhost:4200** en Chrome.
-
-## Demostración
-
-1. `scripts\crear_usuarios_prueba.bat` crea usuarios de prueba (una vez). Sus contraseñas quedan en `scripts\logs\usuarios_prueba.txt`.
-2. `scripts\datos_demo.bat` crea 4 tiendas en León y asigna las tiendas de **hoy** al promotor de prueba. Vuelve a ejecutarlo cada día de demostración. Las coordenadas quedan en `scripts\logs\datos_demo.log`.
-3. **Simular la ubicación**, porque la laptop no está en las tiendas: en Chrome, `F12` → menú ⋮ → *More tools* → **Sensors** → *Location* → *Other…* y escribe la latitud y longitud de la tienda.
-   - Para iniciar la jornada usa la primera tienda (Walmart Torres Landa: 21.1458, -101.6893).
-   - Para probar el rechazo, usa otra tienda o coordenadas a más de 100 m.
-4. **Cámara:** Chrome pide permiso. La cámara y la ubicación solo funcionan en `http://localhost` o con HTTPS. Para usar el celular por red local se necesita HTTPS (`ng serve --ssl`).
-5. Recorrido del promotor:
-   1. Entra como `promotor.prueba@…` y ve a **Entrada/salida**.
-   2. INICIAR JORNADA.
-   3. CHECK-IN.
-   4. TOMAR FOTOS: las 4 categorías.
-   5. CHECK-OUT.
-   6. Pausas.
-   7. FINALIZAR JORNADA.
-6. Recorrido del supervisor: entra como `supervisor.prueba@…` y revisa el Módulo de supervisión (mapa y alertas), Rutas del día, Gestión de rutas, Incidencias y Reportes (PDF).
-7. Recorrido del administrador: entra como `admin.prueba@…` y revisa Usuarios, Tiendas, Rutas, Parámetros y Reportes.
-8. Modo sin conexión: con DevTools → *Network* → **Offline**, haz check-in o toma fotos. Aparecen como "pendientes de sincronizar"; al volver a *Online* se envían y el servidor las valida.
-
-## Pruebas
-
-- `scripts\pruebas.bat` corre todas las pruebas del backend contra SQL Server (base `ScribeTracker_Pruebas`) y contra SQLite. Deja los XML en `docs\pruebas\` y la salida en `scripts\logs\pruebas.log`.
-- A mano: en `backend`, `python -m pytest -v`. Usa SQLite; para usar SQL Server, define antes `set ST_BD_PRUEBAS=ScribeTracker_Pruebas`.
-- Registro para la docente: `python scripts\generar_registro_pruebas.py` genera `docs\pruebas\REGISTRO_PRUEBAS.md` y `registro_pruebas.csv`.
-- Evidencias con SQL Server: `scripts\evidencias_sqlserver_interfaz.bat` (base `ScribeTracker_Pruebas`, nunca la real) guarda el detalle HTTP de cada caso, las capturas de la interfaz en `docs\evidencias\sqlserver\` y el caso F08. Después: `python scripts\evidencias\generar_reporte.py` y `python scripts\evidencias\verificar_evidencias.py`.
-- Antes de subir a GitHub: `scripts\copiar_a_github.bat` (copia sin `.env`, respaldos ni logs y revisa secretos).
-
-## API principal
-
-| Ruta | Rol |
+| Rol | Qué puede hacer |
 |---|---|
-| `/api/auth/login`, `/logout`, `/me`, `/cambiar-password` | Todos |
-| `/api/usuarios`, `/api/parametros`, `/api/tiendas` (escritura) | Administrador |
-| `/api/rutas`, `/api/asignaciones`, `/api/supervision/*`, `/api/incidencias`, `/api/reportes` | Supervisor (sus promotores) y Administrador |
-| `/api/promotor/hoy`, `/jornada/*`, `/visitas/*`, `/evidencias`, `/pausas/*`, `/ubicaciones`, `/historial` | Promotor (solo sus registros) |
+| **Promotor** (celular) | Iniciar la jornada con foto de entrada dentro de la geocerca de su primera tienda; hacer check-in y check-out en cada tienda con 6 fotografías (Entrada, Anaquel antes, Anaquel después, Precios, Promociones y Salida); tomar pausas de comida y descanso; enviar su ubicación durante la jornada; trabajar sin conexión (los registros se guardan y se envían al volver la señal); pedir ajustes a su supervisor; ver su historial. |
+| **Supervisor** (computadora) | Ver en un mapa en tiempo real dónde está cada promotor y sus alertas; revisar rutas del día, incidencias y fotografías; aprobar o rechazar solicitudes de ajuste; generar reportes en PDF; recibir notificaciones push de alertas críticas. |
+| **Administrador** | Todo lo del supervisor, más la gestión de usuarios (alta, edición, desactivar, eliminar sin historial, contraseña temporal), tiendas con su geocerca, rutas y los parámetros del sistema. |
+
+Todos los roles tienen en **Configuración → Ayuda** el manual de usuario en PDF.
+
+## Tecnologías
+
+- **Backend:** Python 3.13 (3.12 en Azure), Flask 3, SQLAlchemy 2, Flask-Migrate (Alembic) para las migraciones, ReportLab para los PDF y pywebpush para las notificaciones.
+- **Frontend:** Angular 21 y Leaflet para los mapas.
+- **Base de datos:** SQL Server (SQL Server Express en local, Azure SQL Database en internet).
+- **Publicación:** Azure App Service (Linux) con gunicorn.
+
+## Estructura
+
+```
+backend/
+  app/
+    models/      Tablas de la base de datos (Usuario, Tienda, Ruta, Jornada, Visita, Evidencia, ...)
+    routes/      API REST: una ruta por módulo (auth, usuarios, tiendas, rutas, promotor, supervision, ...)
+    servicios/   Reglas del negocio: geocerca, alertas, reportes PDF, push, parámetros, ...
+    auth.py      Sesión, roles y permisos
+  migrations/    Versiones de la base de datos (Alembic)
+  tests/         181 pruebas automáticas (pytest)
+  config.py      Configuración (lee backend/.env)
+  wsgi.py        Punto de entrada para el servidor de producción
+frontend/
+  src/app/
+    core/        Servicios compartidos: sesión, API, cola sin conexión, GPS, push
+    pages/       Inicio de sesión y cambio de contraseña
+    promotor/    Pantallas del promotor (vista de celular)
+    panel/       Pantallas del supervisor y del administrador
+    shared/      Componentes reutilizables: cámara, mapa, avisos
+  src/ayuda/     Manual de usuario (PDF)
+despliegue/azure/  Scripts para publicar en Azure
+scripts/           Scripts de Windows para instalar, iniciar y probar
+```
+
+## Instalación en Windows (primera vez)
+
+Requisitos: Python 3.13, Node.js 20.19+, 22.12+ o 24+, SQL Server Express con **ODBC Driver 18 for SQL Server**.
+
+1. En SQL Server crea una base vacía: `CREATE DATABASE ScribeTracker;`
+2. Copia `backend\.env.example` como `backend\.env` y llena sus datos (servidor de SQL y una `SECRET_KEY` propia).
+3. Ejecuta `scripts\instalar.bat`: crea el entorno de Python, instala las dependencias, crea las tablas y prepara Angular.
+4. Ejecuta `scripts\crear_admin.bat` para crear el primer administrador.
+
+## Uso diario
+
+Ejecuta `scripts\abrir_scribetracker.bat`. Enciende SQL Server si hace falta, arranca Flask (`http://127.0.0.1:5000`) y Angular, y abre **http://localhost:4200**.
+
+La cámara y el GPS del navegador solo funcionan en `localhost` o con HTTPS. Para simular la ubicación en la laptop: Chrome → `F12` → menú ⋮ → *More tools* → **Sensors** → *Location*.
+
+## Pruebas automáticas
+
+`scripts\pruebas.bat`, o a mano dentro de `backend`:
+
+```
+.venv\Scripts\activate
+python -m pytest
+```
+
+Usan una base SQLite en memoria, así que no tocan la base real.
+
+## Publicación en Azure
+
+- `despliegue/azure/construir_paquete.sh` compila Angular y arma el paquete para Linux.
+- `despliegue/azure/startup.sh` es el comando de inicio del App Service (`bash startup.sh`): instala el controlador ODBC si falta, prepara la carpeta de fotos y arranca gunicorn.
+- La conexión a Azure SQL se configura en el App Service con `DB_SERVER`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`. La contraseña nunca está en el código.
+- `scripts\azure_bd.bat` aplica las migraciones en la base de Azure.

@@ -23,6 +23,7 @@ interface DatosSeguimiento extends ResumenDia {
 @Component({
   selector: 'app-seguimiento',
   imports: [FormsModule, MapaComponent, SelectorPromotor, DecimalPipe],
+  styles: [`.foto-entrada { margin: 0 0 8px; } .foto-entrada img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; display: block; } .foto-entrada figcaption { font-size: 12px; }`],
   template: `
     <section class="tarjeta filtros">
       <label>Promotor <app-selector-promotor [(valor)]="idPromotor" /></label>
@@ -41,6 +42,9 @@ interface DatosSeguimiento extends ResumenDia {
           <p><b>{{ d.promotor.nombre_completo }}</b> · {{ d.promotor.tipo_contrato || '—' }}</p>
           <p>VISITAS: {{ d.resumen.tiendas_visitadas }}/{{ d.resumen.tiendas_asignadas }} · {{ d.incidencias.length }} incidencia(s)</p>
           @if (d.estado) { <p>Estado actual: {{ d.estado.estado_jornada }} @if (d.estado.estado_visita) { · {{ d.estado.estado_visita }} } · conexión {{ d.estado.estado_conexion }}</p> }
+          @if (d.jornada?.foto_inicio_url) {
+            <figure class="foto-entrada"><img [src]="d.jornada!.foto_inicio_url" alt="Foto de entrada del promotor" /><figcaption>Foto de entrada · {{ hora(d.jornada!.inicio) }}</figcaption></figure>
+          }
           @if (d.jornada) { <p>🟢 Inicio {{ hora(d.jornada.inicio) }} @if (d.jornada.fin) { · Fin {{ hora(d.jornada.fin) }} } @if (d.jornada.cierre_forzado) { · cierre con pendientes: {{ d.jornada.motivo_cierre }} }</p> }
           @for (a of d.asignaciones; track a.id_asignacion) {
             <p>🏪 {{ a.orden_visita }}. {{ a.tienda.nombre_comercial }} {{ a.tienda.sucursal }}<br />

@@ -7,7 +7,28 @@ load_dotenv()
 
 
 def _database_url() -> URL:
-    # Autenticación de Windows (sin usuario ni contraseña en el código).
+    driver = os.getenv("DB_DRIVER", "ODBC Driver 18 for SQL Server")
+    usuario = os.getenv("DB_USER")
+    if usuario:
+        # Nube (Azure SQL): usuario y contraseña de SQL, conexión cifrada con
+        # certificado verificado. La contraseña solo vive en la configuración
+        # del servidor (App Service) o se teclea al migrar; nunca en el código.
+        return URL.create(
+            "mssql+pyodbc",
+            username=usuario,
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("DB_SERVER"),
+            port=int(os.getenv("DB_PORT", "1433")),
+            database=os.getenv("DB_NAME"),
+            query={
+                "driver": driver,
+                "Encrypt": "yes",
+                "TrustServerCertificate": "no",
+                # La base gratuita se pausa sola; al despertar tarda hasta ~1 min.
+                "Connection Timeout": os.getenv("DB_TIMEOUT", "60"),
+            },
+        )
+    # Laptop: autenticación de Windows (sin usuario ni contraseña en el código).
     # TrustServerCertificate: el Driver 18 cifra por defecto y un SQL Server
     # local usa un certificado propio; solo es aceptable en desarrollo.
     return URL.create(
@@ -15,7 +36,7 @@ def _database_url() -> URL:
         host=os.getenv("DB_SERVER"),
         database=os.getenv("DB_NAME"),
         query={
-            "driver": os.getenv("DB_DRIVER", "ODBC Driver 18 for SQL Server"),
+            "driver": driver,
             "trusted_connection": "yes",
             "TrustServerCertificate": "yes",
         },
@@ -32,6 +53,9 @@ def _env_bool(nombre: str, por_defecto: bool = False) -> bool:
 class Config:
     SQLALCHEMY_DATABASE_URI = _database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Etapa 3 (prueba de recuperación): si SQL Server se reinicia, las conexiones
+    # guardadas en el pool quedan rotas; pre_ping las revisa antes de usarlas.
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
     # Clave para firmar la cookie de sesión. Se lee de .env y nunca se
     # escribe en el código; create_app() se niega a arrancar sin ella.
@@ -61,6 +85,14 @@ class Config:
     # Correo para enviar credenciales (opcional). Sin MAIL_SERVER, el alta
     # de usuarios muestra la contraseña temporal una sola vez al
     # administrador.
+    # Prueba beta (etapa 3): carpeta del build de Angular que sirve Flask.
+    FRONTEND_DIST = os.getenv("FRONTEND_DIST")
+    # Carpeta de las claves VAPID (push). En la nube va fuera de la carpeta del
+    # código para que no se borre al publicar una versión nueva.
+    VAPID_DIR = os.getenv("VAPID_DIR")
+    # En Azure (usuario de SQL) la base gratuita se pausa sola: reintentar mientras despierta.
+    DB_REINTENTAR_DESPERTAR = bool(os.getenv("DB_USER"))
+
     MAIL_SERVER = os.getenv("MAIL_SERVER")
     MAIL_PORT = os.getenv("MAIL_PORT", "587")
     MAIL_USERNAME = os.getenv("MAIL_USERNAME")
