@@ -120,8 +120,27 @@ export class PromotorService {
 
   // --------------------------------------------------------------- acciones
 
-  iniciarJornada() {
-    return this.conUbicacion('jornada_iniciar', '/api/promotor/jornada/iniciar', 'Inicio de jornada', {});
+  /** RF-01: inicia la jornada con la ubicación y la foto de entrada (multipart). */
+  async iniciarJornada(foto: Blob, meta: Record<string, unknown>) {
+    this.ocupado.set(true);
+    try {
+      const l = await this.geo.leer();
+      const formulario: Record<string, string> = {
+        latitud: String(l.latitud), longitud: String(l.longitud), precision: String(l.precision),
+        metadatos: JSON.stringify({ ...meta, fuente: 'camara', agente: navigator.userAgent, fecha_dispositivo: ahoraLocalIso() }),
+        capturado_en: ahoraLocalIso(),
+      };
+      const r = await this.cola.ejecutar({
+        tipo: 'jornada_iniciar', url: '/api/promotor/jornada/iniciar', descripcion: 'Inicio de jornada', formulario, foto,
+      });
+      return this.informar(r);
+    } catch (e) {
+      this.avisos.error(mensajeError(e));
+      return null;
+    } finally {
+      this.ocupado.set(false);
+      await this.cargar();
+    }
   }
 
   finalizarJornada(forzar = false, motivo = '') {

@@ -5,9 +5,9 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
 /**
- * Inicio de sesión. Los prototipos piden "ID de empleado"; el ERS y el
- * modelo de diseño (RF-01) piden correo electrónico. Se mantiene el correo
- * (decisión documentada en docs/MATRIZ_REQUISITOS.md).
+ * Inicio de sesión (etapa 3). Se acepta el correo (ERS, modelo de diseño) o
+ * el número de empleado (prototipos) en el mismo campo. Tras 3 intentos
+ * fallidos la cuenta se bloquea 15 minutos (el servidor responde 423).
  */
 @Component({
   selector: 'app-login',
@@ -18,8 +18,8 @@ import { AuthService } from '../../core/auth.service';
         <div class="marca-grande"><span class="logo">Scribe</span> ScribeTracker</div>
         <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
           <label class="campo">
-            <span>CORREO ELECTRÓNICO:</span>
-            <input type="email" formControlName="correo" autocomplete="username" required />
+            <span>CORREO O NÚMERO DE EMPLEADO:</span>
+            <input type="text" formControlName="usuario" autocomplete="username" autocapitalize="off" spellcheck="false" required />
           </label>
           <label class="campo">
             <span>CONTRASEÑA:</span>
@@ -41,7 +41,7 @@ export class LoginPage {
   private readonly fb = inject(NonNullableFormBuilder);
 
   readonly form = this.fb.group({
-    correo: ['', [Validators.required, Validators.email]],
+    usuario: ['', Validators.required],
     password: ['', Validators.required],
   });
   readonly enviando = signal(false);
@@ -49,14 +49,14 @@ export class LoginPage {
 
   async enviar(): Promise<void> {
     if (this.form.invalid) {
-      this.error.set('Escribe un correo válido y tu contraseña.');
+      this.error.set('Escribe tu correo o número de empleado y tu contraseña.');
       return;
     }
     this.enviando.set(true);
     this.error.set(null);
-    const { correo, password } = this.form.getRawValue();
+    const { usuario, password } = this.form.getRawValue();
     try {
-      const u = await this.auth.iniciarSesion(correo, password);
+      const u = await this.auth.iniciarSesion(usuario.trim(), password);
       await this.router.navigateByUrl(this.auth.rutaInicio(u));
     } catch (err) {
       this.error.set(AuthService.mensajeDeError(err));

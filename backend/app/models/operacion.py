@@ -12,7 +12,9 @@ from sqlalchemy import CheckConstraint, Index, UniqueConstraint, text
 from app.extensions import db
 
 ESTATUS_TIENDA = ("Activa", "Inactiva")
-CATEGORIAS = ("Anaquel antes", "Anaquel después", "Precios", "Promociones")
+# RF-06 del modelo de diseño (etapa 3): Entrada, Salida, Anaquel antes/después,
+# Precios y Promociones. Todas son obligatorias para el check-out (regla D).
+CATEGORIAS = ("Entrada", "Anaquel antes", "Anaquel después", "Precios", "Promociones", "Salida")
 TIPOS_PAUSA = ("Comida", "Descanso")
 ESTADOS_INCIDENCIA = ("Pendiente", "Revisada", "Sancionada")
 
@@ -144,6 +146,11 @@ class Jornada(db.Model):
     motivo_cierre = db.Column("Motivo_Cierre", db.String(300), nullable=True)
     fecha_hora_recepcion = db.Column("FechaHora_Recepcion", db.DateTime, nullable=False)
     origen = db.Column("Origen", db.String(20), nullable=False, default="En línea", server_default="En línea")
+    # Etapa 3 · RF-01 del modelo de diseño: foto del promotor al iniciar la
+    # jornada. Las jornadas anteriores a la etapa 3 quedan sin foto (NULL).
+    foto_inicio_ruta = db.Column("Foto_Inicio_Ruta", db.String(255), nullable=True)
+    foto_inicio_hash = db.Column("Foto_Inicio_Hash", db.String(64), nullable=True)
+    foto_inicio_metadatos = db.Column("Foto_Inicio_Metadatos", db.Text, nullable=True)
 
     tienda_inicio = db.relationship("Tienda")
     pausas = db.relationship("Pausa", order_by="Pausa.fecha_hora_inicio", back_populates="jornada")
@@ -213,7 +220,7 @@ class Evidencia(db.Model):
     __tablename__ = "Evidencia"
     __table_args__ = (
         CheckConstraint(
-            "Categoria IN ('Anaquel antes', 'Anaquel después', 'Precios', 'Promociones')",
+            "Categoria IN ('Entrada', 'Anaquel antes', 'Anaquel después', 'Precios', 'Promociones', 'Salida')",
             name="CK_Evidencia_Categoria",
         ),
         CheckConstraint(
@@ -363,3 +370,53 @@ class EventoCliente(db.Model):
     fecha_hora_recepcion = db.Column("FechaHora_Recepcion", db.DateTime, nullable=False)
     codigo_http = db.Column("Codigo_HTTP", db.Integer, nullable=False)
     respuesta = db.Column("Respuesta", db.Text, nullable=False)
+
+
+# ------------------------------------------------------------ etapa 3
+
+TIPOS_SOLICITUD = ("Tienda no visitada", "Check-out olvidado", "Corrección de horario", "Otro")
+ESTADOS_SOLICITUD = ("Pendiente", "Aprobada", "Rechazada")
+
+
+class SolicitudAjuste(db.Model):
+    """RF-15 (modelo de diseño): solicitudes de ajuste del promotor que el
+    supervisor aprueba o rechaza. Quedan en el reporte de desempeño. La
+    decisión es un registro: no modifica visitas ni jornadas ya guardadas."""
+    __tablename__ = "Solicitud_Ajuste"
+    __table_args__ = (
+        CheckConstraint("Tipo IN ('Tienda no visitada', 'Check-out olvidado', 'Corrección de horario', 'Otro')",
+                        name="CK_Solicitud_Tipo"),
+        CheckConstraint("Estado IN ('Pendiente', 'Aprobada', 'Rechazada')", name="CK_Solicitud_Estado"),
+        Index("IX_Solicitud_Promotor_Fecha", "ID_Promotor", "Fecha"),
+    )
+
+    id_solicitud = db.Column("ID_Solicitud", db.Integer, primary_key=True)
+    id_promotor = db.Column("ID_Promotor", db.Integer, db.ForeignKey("Usuario.ID_Usuario"), nullable=False)
+    fecha = db.Column("Fecha", db.Date, nullable=False)  # día del registro que se pide ajustar
+    tipo = db.Column("Tipo", db.String(30), nullable=False)
+    motivo = db.Column("Motivo", db.String(300), nullable=False)
+    id_asignacion = db.Column("ID_Asignacion", db.Integer, db.ForeignKey("Asignacion.ID_Asignacion"), nullable=True)
+    id_jornada = db.Column("ID_Jornada", db.Integer, db.ForeignKey("Jornada.ID_Jornada"), nullable=True)
+    estado = db.Column("Estado", db.String(20), nullable=False, default="Pendiente", server_default="Pendiente")
+    fecha_hora_solicitud = db.Column("FechaHora_Solicitud", db.DateTime, nullable=False)
+    id_revisor = db.Column("ID_Revisor", db.Integer, db.ForeignKey("Usuario.ID_Usuario"), nullable=True)
+    fecha_hora_respuesta = db.Column("FechaHora_Respuesta", db.DateTime, nullable=True)
+    comentario_respuesta = db.Column("Comentario_Respuesta", db.String(300), nullable=True)
+
+    promotor = db.relationship("Usuario", foreign_keys=[id_promotor])
+    revisor = db.relationship("Usuario", foreign_keys=[id_revisor])
+    asignacion = db.relationship("Asignacion")
+
+
+class SuscripcionPush(db.Model):
+    """RF-11 (etapa 3): navegador de un usuario suscrito a notificaciones push
+    (Web Push). El endpoint lo da el navegador; las claves cifran el mensaje."""
+    __tablename__ = "Suscripcion_Push"
+
+    id_suscripcion = db.Column("ID_Suscripcion", db.Integer, primary_key=True)
+    id_usuario = db.Column("ID_Usuario", db.Integer, db.ForeignKey("Usuario.ID_Usuario"), nullable=False)
+    endpoint = db.Column("Endpoint", db.String(500), nullable=False, unique=True)
+    clave_p256dh = db.Column("Clave_P256dh", db.String(200), nullable=False)
+    clave_auth = db.Column("Clave_Auth", db.String(100), nullable=False)
+    agente = db.Column("Agente", db.String(200), nullable=True)
+    fecha_alta = db.Column("Fecha_Alta", db.DateTime, nullable=False)

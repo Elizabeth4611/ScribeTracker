@@ -15,3 +15,7 @@ typing_extensions==4.16.0
 Werkzeug==3.1.9
 # Etapa 2: exportación de reportes a PDF (instala también Pillow)
 reportlab==4.2.5
+# Etapa 3: notificaciones push (RF-11)
+pywebpush==2.0.3
+# Etapa 3: servidor para la prueba beta (Windows)
+waitress==3.0.2

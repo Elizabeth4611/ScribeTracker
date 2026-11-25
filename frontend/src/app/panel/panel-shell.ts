@@ -25,6 +25,7 @@ import { AuthService } from '../core/auth.service';
         <a routerLink="asignacion" routerLinkActive="activo">Gestión de rutas</a>
         <a routerLink="rutas" routerLinkActive="activo">Rutas (plantillas)</a>
         <a routerLink="incidencias" routerLinkActive="activo">Incidencias</a>
+        <a routerLink="solicitudes" routerLinkActive="activo">Solicitudes</a>
         <a routerLink="reportes" routerLinkActive="activo">Reportes</a>
         @if (!esSupervisor()) {
           <a routerLink="usuarios" routerLinkActive="activo">Usuarios</a>

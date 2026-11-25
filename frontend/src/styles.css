@@ -37,6 +37,7 @@ a { color: inherit; }
 .boton--blanco { background: #fff; color: #111; display: block; width: 60%; margin: .6rem auto; }
 .boton--grande { display: block; width: 100%; padding: .9rem; font-size: 1.05rem; margin: .8rem 0; }
 .boton--chico { padding: .2rem .5rem; font-size: .8rem; }
+.boton--peligro { color: var(--rojo); border-color: var(--rojo); }
 .campo { display: grid; gap: .3rem; margin-bottom: .8rem; font-size: .9rem; }
 .campo--fila { grid-template-columns: auto 1fr; align-items: center; }
 input, select, textarea { font: inherit; padding: .5rem .6rem; border: 1px solid #c8c8c8; border-radius: 6px; background: #fff; color: #111; width: 100%; }

@@ -60,9 +60,10 @@ class Usuario(db.Model):
         "Debe_Cambiar_Password", db.Boolean, nullable=False,
         default=False, server_default=text("0"),
     )
-    # Registro de intentos fallidos. La política de bloqueo (cuántos
-    # intentos y por cuánto tiempo) sigue PENDIENTE de definir: se cuentan
-    # pero no se bloquea la cuenta.
+    # Intentos fallidos seguidos. Etapa 3: al llegar a `login_intentos_max`
+    # (3) la cuenta se bloquea `login_bloqueo_min` (15) minutos contados desde
+    # Ultimo_Intento_Fallido. El administrador la desbloquea al asignar una
+    # contraseña temporal.
     intentos_fallidos = db.Column(
         "Intentos_Fallidos", db.Integer, nullable=False,
         default=0, server_default=text("0"),

@@ -1,2 +1,5 @@
 -r requirements.txt
 pytest==8.4.2
+# Etapa 3: pruebas de seguridad del PDF
+pypdf==7.0.0
+pypdfium2==5.15.2

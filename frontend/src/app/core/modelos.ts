@@ -23,7 +23,8 @@ export const RUTA_INICIO: Record<Rol, string> = {
   Administrador: '/panel/inicio',
 };
 
-export const CATEGORIAS = ['Anaquel antes', 'Anaquel después', 'Precios', 'Promociones'] as const;
+// RF-06 (modelo de diseño, etapa 3): seis categorías obligatorias, en el orden en que se toman.
+export const CATEGORIAS = ['Entrada', 'Anaquel antes', 'Anaquel después', 'Precios', 'Promociones', 'Salida'] as const;
 export type Categoria = (typeof CATEGORIAS)[number];
 
 export interface Tienda {
@@ -97,6 +98,7 @@ export interface Jornada {
   fecha: string;
   estado: 'Abierta' | 'Finalizada';
   inicio: string;
+  foto_inicio_url: string | null;
   fin: string | null;
   distancia_inicio_m: number;
   cierre_forzado: boolean;
@@ -180,6 +182,8 @@ export interface Ruta {
 export interface Parametro {
   clave: string;
   descripcion: string;
+  ayuda: string;
+  unidad: string;
   tipo_dato: string;
   valor_activo: string;
   valor_default: string;
@@ -199,4 +203,22 @@ export interface ReporteInfo {
   promotor: string;
   generado_por: string | null;
   formato: string;
+}
+
+/** Etapa 3 · RF-15: solicitud de ajuste del promotor. */
+export const TIPOS_SOLICITUD = ['Tienda no visitada', 'Check-out olvidado', 'Corrección de horario', 'Otro'] as const;
+export interface SolicitudAjuste {
+  id_solicitud: number;
+  id_promotor: number;
+  nombre_promotor: string | null;
+  fecha: string;
+  tipo: string;
+  motivo: string;
+  estado: 'Pendiente' | 'Aprobada' | 'Rechazada';
+  id_asignacion: number | null;
+  tienda: string | null;
+  fecha_hora_solicitud: string;
+  revisor: string | null;
+  fecha_hora_respuesta: string | null;
+  comentario_respuesta: string | null;
 }

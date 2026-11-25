@@ -3,9 +3,10 @@
 from app.extensions import db
 from app.models import Evidencia, Incidencia, Jornada, Ubicacion, Visita
 from tests.conftest import cliente
-from tests.escenario import a_las, foto, punto, subir_foto
+from tests.escenario import iniciar_jornada, a_las, foto, punto, subir_foto
 
-CATS = ["Anaquel antes", "Anaquel después", "Precios", "Promociones"]
+from app.models.operacion import CATEGORIAS as _CATS  # etapa 3: seis categorías
+CATS = list(_CATS)
 
 
 def _p1(app):
@@ -13,7 +14,7 @@ def _p1(app):
 
 
 def _iniciar(c, esc, metros=10):
-    return c.post("/api/promotor/jornada/iniciar", json=punto(esc.coords[0], metros))
+    return iniciar_jornada(c, punto(esc.coords[0], metros))
 
 
 def _asignaciones(c):
@@ -59,7 +60,7 @@ def test_J02_inicio_fuera_de_primera_tienda(app, esc, obs):
     c = _p1(app)
     r = obs(_iniciar(c, esc, metros=120))
     assert r.status_code == 409 and r.get_json()["distancia_m"] > 50
-    assert c.post("/api/promotor/jornada/iniciar", json=punto(esc.coords[1], 5)).status_code == 409
+    assert iniciar_jornada(c, punto(esc.coords[1], 5)).status_code == 409
     with app.app_context():
         assert db.session.execute(db.select(db.func.count()).select_from(Jornada)).scalar_one() == 0
 
@@ -88,7 +89,7 @@ def test_J04_sin_tiendas_asignadas(app, esc, obs):
     Entrada: iniciar jornada en cualquier punto
     Esperado: HTTP 409 "No tienes tiendas asignadas para hoy"
     """
-    r = obs(cliente(app, "p2@test.mx").post("/api/promotor/jornada/iniciar", json=punto(esc.coords[0])))
+    r = obs(iniciar_jornada(cliente(app, "p2@test.mx"), punto(esc.coords[0])))
     assert r.status_code == 409 and "asignadas" in r.get_json()["error"]
 
 
@@ -236,35 +237,37 @@ def test_E04_archivo_no_imagen_y_categoria(app, esc, obs):
 
 def test_V04_checkout_bloqueado_por_categorias(app, esc, obs):
     """V04 · Check-out bloqueado si falta alguna categoría válida
-    RF: RF-04 Check-out; regla D (servidor comprueba las 4 categorías y comunica faltantes)
+    RF: RF-04 Check-out; regla D y RF-06 (etapa 3: servidor comprueba las 6 categorías y comunica faltantes)
     Tipo: inválido
-    Pre: visita abierta con Anaquel antes y Anaquel después válidas, Precios fuera de geocerca
+    Pre: visita abierta con Entrada, Anaquel antes y Anaquel después válidas, Precios fuera de geocerca
     Entrada: check-out dentro de la geocerca
-    Esperado: HTTP 409 con faltantes = [Precios, Promociones]; visita sigue Abierta
+    Esperado: HTTP 409 con faltantes = [Precios, Promociones, Salida]; visita sigue Abierta
     """
     c = _p1(app)
     _iniciar(c, esc)
     idv = _checkin(c, esc).get_json()["visita"]["id_visita"]
+    subir_foto(c, idv, "Entrada", punto(esc.coords[0], 5))
     subir_foto(c, idv, "Anaquel antes", punto(esc.coords[0], 5))
     subir_foto(c, idv, "Anaquel después", punto(esc.coords[0], 5))
     subir_foto(c, idv, "Precios", punto(esc.coords[0], 400))
     r = obs(c.post("/api/promotor/visitas/checkout", json={"id_visita": idv, **punto(esc.coords[0], 5)}))
-    assert r.status_code == 409 and r.get_json()["faltantes"] == ["Precios", "Promociones"]
+    assert r.status_code == 409 and r.get_json()["faltantes"] == ["Precios", "Promociones", "Salida"]
 
 
 def test_V05_checkout_valido_no_cierra_jornada(app, esc, obs):
     """V05 · Check-out válido cierra la visita y mantiene la jornada abierta
     RF: RF-04; reglas C5, C6 y C7
     Tipo: válido
-    Pre: visita abierta con las 4 categorías válidas (Promociones como exhibición sin promoción)
+    Pre: visita abierta con las 6 categorías válidas (Promociones como exhibición sin promoción)
     Entrada: 09:45 check-out a 30 m (nueva ubicación)
     Esperado: HTTP 200; visita Cerrada con hora y coordenadas de salida propias; jornada sigue Abierta; estado En traslado
     """
     c = _p1(app)
     _iniciar(c, esc)
     idv = _checkin(c, esc).get_json()["visita"]["id_visita"]
-    for cat in CATS[:3]:
-        subir_foto(c, idv, cat, punto(esc.coords[0], 5))
+    for cat in CATS:
+        if cat != "Promociones":
+            subir_foto(c, idv, cat, punto(esc.coords[0], 5))
     assert subir_foto(c, idv, "Promociones", punto(esc.coords[0], 5), sin_promocion=True).status_code == 201
     a_las(9, 45)
     r = obs(c.post("/api/promotor/visitas/checkout", json={"id_visita": idv, **punto(esc.coords[0], 30)}))
@@ -339,7 +342,7 @@ def test_J07_flujo_completo(app, esc, obs):
     r = obs(c.post("/api/promotor/jornada/finalizar", json=punto(esc.coords[1])))
     assert r.status_code == 200 and r.get_json()["jornada"]["cierre_forzado"] is False
     h = c.get("/api/promotor/historial?fecha=2026-11-04").get_json()["resumen"]
-    assert h["tiendas_visitadas"] == 2 and h["fotos"] == 8 and h["minutos_en_tienda"] == 180
+    assert h["tiendas_visitadas"] == 2 and h["fotos"] == 2 * len(CATS) and h["minutos_en_tienda"] == 180
 
 
 def test_P01_pausas_y_limites(app, esc, obs):
@@ -427,6 +430,6 @@ def test_A01_promotor_no_accede_a_registros_ajenos(app, esc, obs):
     assert c3.get(f"/api/promotor/visitas/{idv}").status_code == 404
     r = obs(c3.get(url))
     assert r.status_code == 404
-    c3.post("/api/promotor/jornada/iniciar", json=punto(esc.coords[2]))
+    iniciar_jornada(c3, punto(esc.coords[2]))
     assert c3.post("/api/promotor/visitas/checkin", json={"id_asignacion": asign, **punto(esc.coords[1])}).status_code == 404
     assert c3.get("/api/supervision/mapa").status_code == 403

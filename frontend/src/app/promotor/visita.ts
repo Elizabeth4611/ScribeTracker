@@ -10,7 +10,8 @@ import { PromotorService } from './promotor.service';
 
 /**
  * Captura de evidencias (RF-05, RF-06) y check-out (RF-04). Cada visita
- * necesita al menos una foto válida de las cuatro categorías; si no hay
+ * necesita al menos una foto válida de las seis categorías (Entrada al llegar,
+ * Salida al irse; etapa 3); si no hay
  * promociones se fotografía el área de exhibición Scribe en esa categoría.
  */
 @Component({
@@ -65,7 +66,7 @@ import { PromotorService } from './promotor.service';
       }
 
       <button type="button" class="boton boton--rojo boton--grande" (click)="salir()" [disabled]="ps.ocupado()">CHECK-OUT</button>
-      @if (ps.faltantes(v).length) { <p class="nota">Faltan: {{ ps.faltantes(v).join(', ') }}. El servidor no permitirá el check-out sin las 4 categorías válidas.</p> }
+      @if (ps.faltantes(v).length) { <p class="nota">Faltan: {{ ps.faltantes(v).join(', ') }}. El servidor no permitirá el check-out sin las {{ categorias.length }} categorías válidas.</p> }
     }
   `,
 })
@@ -76,7 +77,7 @@ export class VisitaPage {
   readonly categorias = CATEGORIAS;
   readonly hora = hora;
   readonly foto = signal<{ foto: Blob; ancho: number; alto: number } | null>(null);
-  categoria: Categoria = 'Anaquel antes';
+  categoria: Categoria = 'Entrada';
   sinPromocion = false;
 
   readonly evidencias = computed<Evidencia[]>(() => {

@@ -13,7 +13,7 @@ from io import BytesIO
 from flask import current_app
 
 from app.extensions import db
-from app.models import Asignacion, Evidencia, Incidencia, Jornada, Usuario, Visita
+from app.models import Asignacion, Evidencia, Incidencia, Jornada, Usuario, Visita, SolicitudAjuste
 from app.models.operacion import CATEGORIAS
 from app.servicios import parametros
 
@@ -48,6 +48,10 @@ def metricas_promotor(p: Usuario, ini: date, fin: date, con_evidencias: bool) ->
         Incidencia.id_promotor == p.id_usuario, Incidencia.fecha_hora >= ini_dt,
         Incidencia.fecha_hora < fin_dt).order_by(Incidencia.fecha_hora)).scalars().all()
 
+    solic = db.session.execute(db.select(SolicitudAjuste).where(
+        SolicitudAjuste.id_promotor == p.id_usuario, SolicitudAjuste.fecha.between(ini, fin))
+        .order_by(SolicitudAjuste.fecha, SolicitudAjuste.id_solicitud)).scalars().all()
+
     cerradas = [v for v in visitas if v.estado == "Cerrada"]
     durac = [_min(v.fecha_hora_checkin, v.fecha_hora_checkout) for v in cerradas]
     hs_h, hs_m = (int(x) for x in parametros.valor("hora_salida").split(":"))
@@ -78,9 +82,14 @@ def metricas_promotor(p: Usuario, ini: date, fin: date, con_evidencias: bool) ->
         "incidencias_total": len(incid),
         "incidencias_criticas": sum(1 for i in incid if i.es_critica),
         "incidencias_por_tipo": dict(Counter(i.tipo for i in incid)),
-        # RF-15 menciona «solicitudes de ajuste», pero no hay especificación
-        # de ese proceso en el ERS ni en el modelo de diseño.
-        "solicitudes_ajuste": "Sin especificación en el ERS",
+        # RF-15 (etapa 3): solicitudes de ajuste aprobadas y rechazadas del periodo.
+        "solicitudes_aprobadas": sum(1 for x in solic if x.estado == "Aprobada"),
+        "solicitudes_rechazadas": sum(1 for x in solic if x.estado == "Rechazada"),
+        "solicitudes_pendientes": sum(1 for x in solic if x.estado == "Pendiente"),
+        "solicitudes": [{"fecha": x.fecha.isoformat(), "tipo": x.tipo, "estado": x.estado, "motivo": x.motivo,
+                         "tienda": (f"{x.asignacion.tienda.nombre_comercial} {x.asignacion.tienda.sucursal}"
+                                    if x.asignacion else None), "comentario": x.comentario_respuesta}
+                        for x in solic],
         "incidencias": [{"fecha_hora": i.fecha_hora.isoformat(), "tipo": i.tipo, "critica": bool(i.es_critica),
                          "descripcion": i.descripcion, "estado": i.estado} for i in incid],
         "visitas": [{
@@ -132,6 +141,14 @@ def _imagen_segura(ruta, Image, ancho, alto):
         return None
 
 
+def esc(texto) -> str:
+    """Corrección F11: el texto que escribe el usuario (motivos, descripciones,
+    nombres) se escapa antes de pasar a Paragraph, que interpreta marcas como
+    <b> o <font>. Así sale literal y no puede cambiar el formato del PDF."""
+    from xml.sax.saxutils import escape
+    return escape(str(texto))
+
+
 def pdf(reporte, metricas: dict, generado_por: str) -> bytes:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import letter
@@ -177,7 +194,7 @@ def pdf(reporte, metricas: dict, generado_por: str) -> bytes:
     for i, p in enumerate(metricas["promotores"]):
         if i and metricas["contenido"] == "Exhibición":
             h.append(PageBreak())
-        h += [Spacer(1, 12), Paragraph(f"{p['nombre']} ({p['numero_empleado'] or 's/n'})", h2)]
+        h += [Spacer(1, 12), Paragraph(f"{esc(p['nombre'])} ({esc(p['numero_empleado'] or 's/n')})", h2)]
         if metricas["contenido"] in ("Desempeño", "Exhibición"):
             h.append(tabla([
                 ["Indicador", "Valor", "Indicador", "Valor"],
@@ -190,18 +207,26 @@ def pdf(reporte, metricas: dict, generado_por: str) -> bytes:
                  f"{p['fotos_validas']} / {p['fotos_total']}"],
                 ["Fotos fuera de geocerca", p["fotos_fuera_geocerca"], "Fotos repetidas", p["fotos_rechazadas"]],
                 ["Incidencias (críticas)", f"{p['incidencias_total']} ({p['incidencias_criticas']})",
-                 "Solicitudes de ajuste", "Sin especificación"],
+                 "Ajustes aprob. / rech.",
+                 f"{p['solicitudes_aprobadas']} / {p['solicitudes_rechazadas']}"],
             ], [5 * cm, 3.5 * cm, 4.5 * cm, 3.5 * cm]))
+        if metricas["contenido"] == "Desempeño" and p["solicitudes"]:
+            h.append(Spacer(1, 6))
+            h.append(tabla([["Fecha", "Tipo", "Tienda", "Estado", "Motivo / respuesta"]] +
+                           [[x["fecha"], Paragraph(esc(x["tipo"]), n), Paragraph(esc(x["tienda"] or "—"), n), x["estado"],
+                             Paragraph(esc(x["motivo"]) + (f" — <i>{esc(x['comentario'])}</i>" if x["comentario"] else ""), n)]
+                            for x in p["solicitudes"]],
+                           [2.2 * cm, 3 * cm, 3.5 * cm, 2 * cm, 6.3 * cm]))
         if p["visitas"] and metricas["contenido"] != "Incidencias":
             h.append(Spacer(1, 6))
             h.append(tabla([["Fecha", "Tienda", "Entrada", "Salida", "Minutos"]] +
-                           [[x["fecha"], Paragraph(x["tienda"], n), x["checkin"], v(x["checkout"]), v(x["duracion_min"])]
+                           [[x["fecha"], Paragraph(esc(x["tienda"]), n), x["checkin"], v(x["checkout"]), v(x["duracion_min"])]
                             for x in p["visitas"]], [2.3 * cm, 7.5 * cm, 2 * cm, 2 * cm, 2 * cm]))
         if metricas["contenido"] in ("Incidencias", "Desempeño") and p["incidencias"]:
             h.append(Spacer(1, 6))
             h.append(tabla([["Fecha y hora", "Tipo", "Crítica", "Estado", "Descripción"]] +
-                           [[x["fecha_hora"].replace("T", " ")[:16], Paragraph(x["tipo"], n), "Sí" if x["critica"] else "No",
-                             x["estado"], Paragraph(x["descripcion"] or "", n)] for x in p["incidencias"]],
+                           [[x["fecha_hora"].replace("T", " ")[:16], Paragraph(esc(x["tipo"]), n), "Sí" if x["critica"] else "No",
+                             x["estado"], Paragraph(esc(x["descripcion"] or ""), n)] for x in p["incidencias"]],
                            [3 * cm, 3.5 * cm, 1.4 * cm, 2 * cm, 7 * cm]))
         if metricas["contenido"] == "Exhibición":
             base = current_app.config["EVIDENCIAS_DIR"]
@@ -209,19 +234,20 @@ def pdf(reporte, metricas: dict, generado_por: str) -> bytes:
                 fotos = [e for e in (x["evidencias"] or []) if e["estatus"] == "Válida"]
                 if not fotos:
                     continue
-                h += [Spacer(1, 6), Paragraph(f"<b>{x['tienda']}</b> · {x['fecha']} {x['checkin']}–{v(x['checkout'])}", n)]
+                h += [Spacer(1, 6), Paragraph(f"<b>{esc(x['tienda'])}</b> · {x['fecha']} {x['checkin']}–{v(x['checkout'])}", n)]
                 celdas = []
                 for e in sorted(fotos, key=lambda e: CATEGORIAS.index(e["categoria"])):
                     ev = db.session.get(Evidencia, e["id"])
                     ruta = os.path.join(base, ev.ruta_imagen) if ev else None
                     img = _imagen_segura(ruta, Image, 4 * cm, 3 * cm) or Paragraph("(imagen no disponible)", n)
                     rotulo = e["categoria"] + (" (exhibición, sin promoción)" if e["sin_promocion"] else "")
-                    celdas.append([img, Paragraph(f"{rotulo}<br/>{e['hora']}", n)])
-                fila_img = [c[0] for c in celdas]
-                fila_txt = [c[1] for c in celdas]
-                tt = Table([fila_img, fila_txt], colWidths=[4.3 * cm] * len(celdas))
-                tt.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("FONTSIZE", (0, 0), (-1, -1), 7)]))
-                h.append(tt)
+                    celdas.append([img, Paragraph(f"{esc(rotulo)}<br/>{e['hora']}", n)])
+                # Etapa 3: con 6 categorías no caben en una fila; se acomodan de 4 en 4.
+                for i in range(0, len(celdas), 4):
+                    grupo = celdas[i:i + 4]
+                    tt = Table([[c[0] for c in grupo], [c[1] for c in grupo]], colWidths=[4.3 * cm] * len(grupo))
+                    tt.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("FONTSIZE", (0, 0), (-1, -1), 7)]))
+                    h.append(tt)
 
     doc.build(h)
     return buf.getvalue()

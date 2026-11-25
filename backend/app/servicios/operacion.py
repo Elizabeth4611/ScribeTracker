@@ -4,6 +4,7 @@ Todas las reglas se aplican aquí, en el servidor; la interfaz solo las
 refleja. Las funciones reciben la hora de captura del dispositivo porque
 en el modo sin conexión el evento llega después de ocurrir.
 """
+import json
 from datetime import datetime, timedelta
 
 from flask import request
@@ -47,6 +48,29 @@ def leer_ubicacion(datos) -> tuple[float, float, float | None]:
     if prec is not None and prec > PRECISION_MAXIMA_M:
         raise ReglaError(f"La señal GPS es muy imprecisa (±{int(prec)} m). Sal a un área abierta e intenta de nuevo.", 400)
     return lat, lon, prec
+
+
+def leer_foto_inicio(archivo, metadatos_cliente=None) -> dict:
+    """RF-01 (modelo de diseño): la foto de entrada es obligatoria y debe
+    pasar los filtros: imagen real (JPEG, PNG o WEBP), hasta 5 MB y no repetida.
+    Si no pasa, la jornada NO se inicia ("Fotografía no válida")."""
+    from app.servicios import imagenes
+    if archivo is None:
+        raise ReglaError("Toma tu foto de entrada con la cámara para iniciar la jornada.", 400)
+    try:
+        datos, tipo, sha = imagenes.leer(archivo)
+    except imagenes.ImagenError as e:
+        raise ReglaError(f"Fotografía no válida: {e.mensaje} Intenta de nuevo.", e.codigo)
+    if imagenes.ya_usada(sha):
+        raise ReglaError("Fotografía no válida: esa imagen ya se había enviado antes. Toma una foto nueva.", 400)
+    try:
+        meta = json.loads(metadatos_cliente or "{}")
+        meta = meta if isinstance(meta, dict) else {}
+    except ValueError:
+        meta = {}
+    meta = {k: meta.get(k) for k in ("fuente", "ancho", "alto", "agente", "fecha_dispositivo")}
+    meta.update({"tipo": tipo[0], "bytes": len(datos), "sha256": sha})
+    return {"datos": datos, "extension": tipo[1], "sha": sha, "meta": meta}
 
 
 def leer_captura(datos) -> datetime:
@@ -119,6 +143,14 @@ def registrar_incidencia(id_promotor, tipo, descripcion, critica=False, clave=No
                      descripcion=descripcion, estado="Pendiente", clave_unica=clave, origen="Sistema", **refs)
     db.session.add(inc)
     db.session.flush()
+    if critica:
+        # RF-11 (etapa 3): las incidencias críticas también llegan como
+        # notificación push al supervisor del promotor.
+        from app.models import Usuario
+        from app.servicios import push
+        p = db.session.get(Usuario, id_promotor)
+        if p is not None and p.id_supervisor:
+            push.encolar([p.id_supervisor], f"Alerta crítica: {tipo}", f"{p.nombre_completo}: {descripcion}")
     return inc
 
 
@@ -129,7 +161,7 @@ def _hora_param(fecha, clave) -> datetime:
 
 # --------------------------------------------------------------- jornada
 
-def iniciar_jornada(promotor, lat, lon, prec, captura) -> Jornada:
+def iniciar_jornada(promotor, lat, lon, prec, captura, foto=None, metadatos_foto=None) -> Jornada:
     fecha = captura.date()
     if jornada_de(promotor.id_usuario, fecha) is not None:
         raise ReglaError("Ya registraste una jornada para este día. Solo se permite una jornada por fecha.")
@@ -151,6 +183,14 @@ def iniciar_jornada(promotor, lat, lon, prec, captura) -> Jornada:
                 latitud_inicio=lat, longitud_inicio=lon, precision_inicio_m=prec,
                 id_tienda_inicio=t.id_tienda, distancia_inicio_m=d, estado="Abierta",
                 fecha_hora_recepcion=ahora(), origen=origen_peticion())
+    # La foto se valida después de las reglas de tienda y geocerca, y antes de
+    # guardar nada: si no pasa los filtros la jornada no se inicia.
+    foto = leer_foto_inicio(foto, metadatos_foto)
+    if foto is not None:
+        from app.servicios import imagenes
+        j.foto_inicio_ruta = imagenes.guardar(foto["datos"], foto["extension"], captura, "jornadas")
+        j.foto_inicio_hash = foto["sha"]
+        j.foto_inicio_metadatos = json.dumps(foto["meta"], ensure_ascii=False)
     db.session.add(j)
     try:
         db.session.flush()
@@ -198,6 +238,15 @@ def finalizar_jornada(promotor, lat, lon, prec, captura, forzar=False, motivo=""
         registrar_incidencia(promotor.id_usuario, "Jornada cerrada con tiendas pendientes",
                              f"Pendientes: {', '.join(nombres)}. Motivo: {motivo}",
                              clave=f"cierre:{j.id_jornada}", id_jornada=j.id_jornada)
+        # Etapa 3 · RF-15: el cierre con pendientes ya no queda "sin aprobar":
+        # cada tienda pendiente genera una solicitud de ajuste para el supervisor.
+        from app.routes.solicitudes import crear as crear_solicitud
+        for a in pendientes:
+            try:
+                crear_solicitud(promotor.id_usuario, j.fecha, "Tienda no visitada", motivo[:300],
+                                a.id_asignacion, j.id_jornada)
+            except ReglaError:
+                pass  # ya había una pendiente igual
     db.session.commit()
     return j
 
@@ -357,15 +406,23 @@ def registrar_ubicacion(promotor, lat, lon, prec, captura, id_cliente=None) -> U
 
 # ----------------------------------------------------------------- estados
 
-def estado_promotor(promotor, fecha) -> dict:
-    """Estados separados: cuenta, jornada, visita y conexión."""
-    j = jornada_de(promotor.id_usuario, fecha)
-    pausa = pausa_activa(j) if j and j.estado == "Abierta" else None
-    visita = visita_abierta(promotor.id_usuario) if j and j.estado == "Abierta" else None
-    ultima = None
-    if j:
-        ultima = db.session.execute(db.select(Ubicacion).where(Ubicacion.id_jornada == j.id_jornada)
-                                    .order_by(Ubicacion.fecha_hora_captura.desc())).scalars().first()
+def estado_promotor(promotor, fecha, ctx=None) -> dict:
+    """Estados separados: cuenta, jornada, visita y conexión. Con `ctx`
+    (servicios.lote.Contexto) usa datos ya cargados en lote (F13)."""
+    if ctx is not None:
+        j = ctx.jornadas.get(promotor.id_usuario)
+        abierta = j is not None and j.estado == "Abierta"
+        pausa = ctx.pausa_activa.get(j.id_jornada) if abierta else None
+        visita = ctx.visita_abierta.get(promotor.id_usuario) if abierta else None
+        ultima = ctx.ultima_ubicacion.get(j.id_jornada) if j else None
+    else:
+        j = jornada_de(promotor.id_usuario, fecha)
+        pausa = pausa_activa(j) if j and j.estado == "Abierta" else None
+        visita = visita_abierta(promotor.id_usuario) if j and j.estado == "Abierta" else None
+        ultima = None
+        if j:
+            ultima = db.session.execute(db.select(Ubicacion).where(Ubicacion.id_jornada == j.id_jornada)
+                                        .order_by(Ubicacion.fecha_hora_captura.desc())).scalars().first()
 
     if j is None:
         e_jornada = "Sin jornada"

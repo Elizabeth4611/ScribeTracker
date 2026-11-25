@@ -11,7 +11,7 @@ from app.extensions import db
 from app.models import Asignacion, Incidencia, Jornada, Parametro, Reporte, Ruta, Tienda, Ubicacion, Usuario, Visita
 from app.routes.promotor import resumen_dia, visita_a_dict
 from app.routes.tiendas import tienda_a_dict
-from app.servicios import alertas, parametros
+from app.servicios import alertas, lote, parametros
 from app.servicios import operacion as op
 from app.servicios.tiempo import ahora, hoy
 
@@ -70,19 +70,21 @@ def mapa():
     fecha = hoy()
     ids = ids_promotores_visibles(yo)
     alertas.evaluar(fecha, ids)
+    ctx = lote.Contexto(ids, fecha)   # F13: datos del día de todos en pocas consultas
     filas = []
     resumen = {"En tienda": 0, "En traslado": 0, "En pausa": 0, "Sin jornada": 0, "Finalizada": 0,
                "Desconectados": 0}
     for p in db.session.execute(db.select(Usuario).where(Usuario.id_usuario.in_(ids), Usuario.estatus == "Activo")
                                 .order_by(Usuario.nombre_completo)).scalars():
-        est = op.estado_promotor(p, fecha)
-        asign = op.asignaciones_del_dia(p.id_usuario, fecha)
-        visitas = {v.id_asignacion: v for v in db.session.execute(db.select(Visita).where(
-            Visita.id_asignacion.in_([a.id_asignacion for a in asign]))).scalars()} if asign else {}
+        est = op.estado_promotor(p, fecha, ctx)
+        asign = ctx.asignaciones.get(p.id_usuario, [])
+        visitas = {a.id_asignacion: ctx.visita_de_asignacion[a.id_asignacion]
+                   for a in asign if a.id_asignacion in ctx.visita_de_asignacion}
         clave = est["estado_visita"] or est["estado_jornada"]
         resumen[clave] = resumen.get(clave, 0) + 1
         if est["estado_jornada"] == "En jornada" and est["estado_conexion"] in ("Desactualizada", "Sin ubicación"):
             resumen["Desconectados"] += 1
+        j = ctx.jornadas.get(p.id_usuario)
         filas.append({
             "id_usuario": p.id_usuario, "nombre_completo": p.nombre_completo, "numero_empleado": p.numero_empleado,
             **est,
@@ -91,7 +93,7 @@ def mapa():
                         for a in asign],
             "visitadas": sum(1 for v in visitas.values() if v.estado == "Cerrada"),
             "asignadas": len(asign),
-            "pausas_hoy": len(op.jornada_de(p.id_usuario, fecha).pausas) if op.jornada_de(p.id_usuario, fecha) else 0,
+            "pausas_hoy": len(j.pausas) if j else 0,
         })
     criticas = db.session.execute(db.select(Incidencia).where(
         Incidencia.id_promotor.in_(ids), Incidencia.es_critica == True, Incidencia.estado == "Pendiente",
